@@ -38,6 +38,8 @@ public class DrifterFootsteps : MonoBehaviour
     [Range(0f, 1f)] public float sprintVolumeMultiplier = 1.0f;
     [Tooltip("Random pitch variation so steps don't sound identical.")]
     [Range(0f, 0.5f)] public float pitchJitter = 0.12f;
+    
+    public event System.Action StepTaken;
 
     DrifterController drifter;
     float timer;             // bob phase in radians, same as HeadBob
@@ -123,6 +125,8 @@ public class DrifterFootsteps : MonoBehaviour
 
     void PlayFootstep()
     {
+        StepTaken?.Invoke();
+        
         AudioClip clip = PickClip();
         if (clip == null) return;
 
