@@ -39,6 +39,18 @@ public class SandstormController : MonoBehaviour
     [Tooltip("How quickly the storm re-centers on the player. Low = smooth drift (stable fog), high = rigid tracking (fog pattern drags visibly). 0 = instant.")]
     public float followSmoothing = 1.5f;
 
+    [Header("Distant Fog (horizon blend)")]
+    [Tooltip("Infinite fog beyond the storm volume, so far dunes melt into the storm instead of staying sharp.")]
+    public bool distantFogEnabled = true;
+    [Tooltip("Distance (meters) where the horizon fog starts. Keep it inside the storm radius for a seamless blend.")]
+    public float distantFogStart = 50f;
+    [Range(0f, 2f), Tooltip("How quickly things disappear with distance.")]
+    public float distantFogDensity = 0.6f;
+    [Tooltip("Color of the horizon haze. Match it to the storm's sand tone.")]
+    public Color distantFogColor = new Color(0.8f, 0.65f, 0.47f, 1f);
+    [Range(0f, 2f), Tooltip("How quickly the haze thins with altitude (lower = more of the sky gets tinted).")]
+    public float distantFogHeightDensity = 0.35f;
+
     [Header("Gusts")]
     public bool gusts = true;
     [Tooltip("How fast gusts come and go.")]
@@ -95,16 +107,36 @@ public class SandstormController : MonoBehaviour
         }
 
         ApplySize();
+        ApplyDistantFog();
     }
 
     void OnValidate()
     {
         stormSize = Mathf.Max(10f, stormSize);
         stormHeight = Mathf.Max(4f, stormHeight);
+        distantFogStart = Mathf.Max(5f, distantFogStart);
         if (fog == null) fog = GetComponentInChildren<VolumetricFog>();
         if (sandParticles == null) sandParticles = GetComponentInChildren<ParticleSystem>();
         ApplySize();
         ApplyOrganicParticles();
+        ApplyDistantFog();
+    }
+
+    /// <summary>
+    /// Pushes the Distant Fog settings into the fog profile - the instanced
+    /// copy in play mode, or the shared profile asset in edit mode (so you
+    /// can tune it live in the Inspector either way).
+    /// </summary>
+    public void ApplyDistantFog()
+    {
+        var p = Application.isPlaying ? runtimeProfile : (fog != null ? fog.profile : null);
+        if (p == null) return;
+        p.distantFog = distantFogEnabled;
+        p.distantFogStartDistance = distantFogStart;
+        p.distantFogDistanceDensity = distantFogDensity;
+        p.distantFogColor = distantFogColor;
+        p.distantFogHeightDensity = distantFogHeightDensity;
+        if (fog != null) fog.UpdateMaterialProperties();
     }
 
     /// <summary>
