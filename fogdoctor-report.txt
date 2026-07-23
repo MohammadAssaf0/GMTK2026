@@ -1,0 +1,14 @@
+reimported: Assets/VolumetricFog2/Resources
+reimported: Assets/VolumetricFog2/Demo/Noise Textures
+reimported: Assets/VolumetricFog2/Demo/Presets
+shader OK: Hidden/VolumetricFog2/Turbulence2D
+shader OK: Hidden/VolumetricFog2/Noise2DGen
+shader OK: Hidden/VolumetricFog2/Empty
+shader OK: VolumetricFog2/VolumetricFog2DURP
+manager in scene: OK
+fog volumes in scene: 1
+- 'Sandstorm Fog' active=True pos=(-5960.19, 12.50, -530.38) scale=(400.00, 25.00, 400.00)
+  profile: Sandstorm Profile density=0.5 noiseTexture=NoiseTex256 detail=NoiseTex3D
+  renderer material: VolumetricFog2/VolumetricFog2DURP shader: VolumetricFog2/VolumetricFog2DURP
+main camera: OK far=1000
+RESULT: ALL CHECKS PASSED

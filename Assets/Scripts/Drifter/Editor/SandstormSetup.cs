@@ -76,8 +76,8 @@ public static class SandstormSetup
         // --- fog volume ---
         GameObject fogGo = VolumetricFogManager.CreateFogVolume("Sandstorm Fog");
         fogGo.transform.SetParent(root.transform, false);
-        fogGo.transform.localPosition = new Vector3(0f, 12.5f, 0f);
-        fogGo.transform.localScale = new Vector3(400f, 25f, 400f);
+        fogGo.transform.localPosition = new Vector3(0f, 10f, 0f);
+        fogGo.transform.localScale = new Vector3(150f, 20f, 150f);
         var fog = fogGo.GetComponent<VolumetricFog>();
         fog.profile = profile;
 

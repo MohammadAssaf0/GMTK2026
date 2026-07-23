@@ -48,6 +48,8 @@ public class DrifterController : MonoBehaviour
     public float gravity = 10f;
     [Tooltip("Grace period after stepping off a ledge in which a jump is still allowed.")]
     public float coyoteTime = 0.12f;
+    [Tooltip("How far below the feet to search for ground when walking downhill, so the drifter hugs dune slopes instead of floating off them. 0 = off.")]
+    public float groundSnapDistance = 1.8f;
 
     [Header("Slopes")]
     [Tooltip("Slide down slopes steeper than the CharacterController's Slope Limit.")]
@@ -112,6 +114,12 @@ public class DrifterController : MonoBehaviour
 
         startPosition = transform.position;
         startRotation = transform.rotation;
+
+        // Safety: if the drifter STARTS below the reset line, push the line
+        // further down - otherwise it teleports to start every frame and
+        // appears completely frozen.
+        if (startPosition.y <= resetBelowY + 2f)
+            resetBelowY = startPosition.y - 100f;
     }
 
     void Start()
@@ -316,6 +324,23 @@ public class DrifterController : MonoBehaviour
 
         float fallSpeed = -moveDirection.y;
         grounded = (controller.Move(moveDirection * Time.deltaTime) & CollisionFlags.Below) != 0;
+
+        // --- ground snap: when walking downhill, stick to the slope instead
+        // of floating off it. Only when we just left the ground while moving
+        // down (never right after a jump, since then y > 0).
+        if (!grounded && wasGrounded && moveDirection.y <= 0f && groundSnapDistance > 0f)
+        {
+            Vector3 origin = transform.position + controller.center;
+            float footGap = controller.height * 0.5f - controller.radius;
+            float castDistance = footGap + groundSnapDistance;
+            if (Physics.SphereCast(origin, controller.radius * 0.9f, Vector3.down,
+                    out RaycastHit snapHit, castDistance, ~0, QueryTriggerInteraction.Ignore))
+            {
+                float drop = snapHit.distance - footGap + controller.skinWidth;
+                if (drop > 0f)
+                    grounded = (controller.Move(Vector3.down * drop) & CollisionFlags.Below) != 0;
+            }
+        }
 
         if (grounded && !wasGrounded)
             Landed?.Invoke(Mathf.Max(0f, fallSpeed));
