@@ -32,6 +32,12 @@ public class DayNightCycle : MonoBehaviour
     [Tooltip("Sun intensity across the day.")]
     public AnimationCurve sunIntensity = DefaultSunIntensity();
 
+    [Header("Night")]
+    [Tooltip("Faint 'moonlight' so the world stays readable at night.")]
+    public float nightIntensity = 0.12f;
+    [Tooltip("Cool night light color.")]
+    public Color nightColor = new Color(0.45f, 0.55f, 0.78f);
+
     [Header("Sky")]
     [Tooltip("Skybox exposure across the day (applied in play mode).")]
     public AnimationCurve skyExposure = DefaultSkyExposure();
@@ -76,8 +82,16 @@ public class DayNightCycle : MonoBehaviour
 
         // 06:00 sunrise at the horizon, 12:00 overhead, 18:00 sunset.
         sun.transform.rotation = Quaternion.Euler(t * 360f - 90f, sunYaw, 0f);
-        sun.color = sunColor.Evaluate(t);
-        sun.intensity = sunIntensity.Evaluate(t);
+
+        // Fade the light with the sun's ACTUAL elevation, so its glow dies
+        // the moment it dips below the horizon (no lingering sunset light),
+        // and a faint cool moonlight takes over at night.
+        float elevation = -sun.transform.forward.y;             // 1 = overhead, 0 = horizon
+        float horizonFade = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(-0.02f, 0.15f, elevation));
+
+        float dayIntensity = sunIntensity.Evaluate(t) * horizonFade;
+        sun.color = Color.Lerp(nightColor, sunColor.Evaluate(t), horizonFade);
+        sun.intensity = Mathf.Max(dayIntensity, nightIntensity);
 
         if (skyboxRuntime != null && skyboxRuntime.HasProperty("_Exposure"))
             skyboxRuntime.SetFloat("_Exposure", skyExposure.Evaluate(t));

@@ -77,6 +77,16 @@ public class DrifterController : MonoBehaviour
     [Tooltip("Extra FOV while sprinting - makes running FEEL fast. 0 = off.")]
     public float sprintFovBoost = 10f;
 
+    [Header("Intro (fade in + wake up)")]
+    [Tooltip("Start the game with a fade from black while getting up off the ground.")]
+    public bool introEnabled = true;
+    [Tooltip("Seconds for the black screen to fade away.")]
+    public float introFadeDuration = 3.5f;
+    [Tooltip("Seconds of lying on the ground (slowly looking around) before getting up.")]
+    public float introDelay = 8f;
+    [Tooltip("Seconds it takes to rise from the ground to standing.")]
+    public float introGetUpDuration = 7f;
+
     [Header("Slide Tumble")]
     [Tooltip("When sliding down a steep slope, tumble head-over-heels and then get back up.")]
     public bool tumbleEnabled = true;
@@ -84,8 +94,12 @@ public class DrifterController : MonoBehaviour
     public float tumbleAfterSliding = 0.45f;
     [Tooltip("Tumble spin speed, degrees per second.")]
     public float tumbleSpinSpeed = 380f;
-    [Tooltip("How long getting back up takes, seconds.")]
-    public float getUpDuration = 0.9f;
+    [Tooltip("Exactly how many full rolls before landing and getting up.")]
+    public int tumbleRolls = 3;
+    [Tooltip("How long the staged get-up takes, seconds (like the intro wake-up).")]
+    public float getUpDuration = 2.4f;
+    [Tooltip("After a fall, the slope stops knocking you down. It re-arms only after this many seconds on walkable ground.")]
+    public float tumbleRecoverTime = 1.2f;
 
     [Header("Safety")]
     [Tooltip("Like the prefab's CheckIfBelowLevel: falling below this Y teleports back to the start.")]
@@ -124,6 +138,13 @@ public class DrifterController : MonoBehaviour
     float tumblePitch;
     float tumblePitchAtGetUp;
     float getUpT;
+    bool tumbleSpent;         // already fell this slide - slope won't knock us again
+    float tumbleNotSlidingTime;
+
+    // intro state
+    bool introPlaying;
+    float introTimer;
+    float introPitch, introYaw, introRoll;
 
     void Awake()
     {
@@ -150,6 +171,11 @@ public class DrifterController : MonoBehaviour
         LockCursor(true);
         speed = walkSpeed;
         FixSpawnIfUnderground();
+        if (introEnabled)
+        {
+            introPlaying = true;
+            introTimer = 0f;
+        }
     }
 
     // If the saved spawn point ended up under the terrain (easy to do when
@@ -216,8 +242,77 @@ public class DrifterController : MonoBehaviour
         HandleZoom(mouse);
         HandleCrouch(kb);
         HandleMovement(kb);
+        UpdateIntro();
         UpdateTumble();
         CheckBelowLevel();
+    }
+
+    // ----------------------------------------------------------------- intro
+    // Fade from black while lying on the ground. Phase 1: lying on the back,
+    // slowly looking around, breathing. Phase 2: a realistic staged get-up -
+    // roll to the side, push up while looking at the ground, rise to standing
+    // with a little effort wobble. Control unlocks when fully up.
+    void UpdateIntro()
+    {
+        if (!introPlaying || cameraHolder == null) return;
+        introTimer += Time.deltaTime;
+
+        Vector3 normalPos = cameraHolder.localPosition; // standing pose from ApplyHeight
+        float groundLocalY = -controller.height * 0.5f + 0.3f;
+
+        if (introTimer < introDelay)
+        {
+            // --- lying on the back: slow look around + gentle breathing ---
+            float u = introTimer / Mathf.Max(0.1f, introDelay);
+            float settle = Mathf.SmoothStep(0f, 1f, Mathf.Min(u * 3f, 1f));
+            introYaw = 38f * Mathf.Sin(u * Mathf.PI * 1.6f) * settle;         // pan side to side
+            introPitch = -55f + Mathf.Sin(introTimer * 1.1f) * 3.5f;          // breathing
+            introRoll = 28f + Mathf.Sin(introTimer * 0.7f) * 4f;
+            cameraHolder.localRotation = Quaternion.Euler(introPitch, introYaw, introRoll);
+            cameraHolder.localPosition = new Vector3(0f, groundLocalY, 0f);
+            return;
+        }
+
+        // --- staged get-up keyframes: [lying] -> roll to side -> push up
+        //     (looking at the ground) -> almost up -> standing ---
+        float g = Mathf.Clamp01((introTimer - introDelay) / Mathf.Max(0.1f, introGetUpDuration));
+        float[] T = { 0f, 0.25f, 0.55f, 0.85f, 1f };
+        float[] P = { introPitch, -12f, 24f, 7f, 0f };   // pitch
+        float[] R = { introRoll, 65f, 10f, -2f, 0f };    // roll
+        float[] Y = { introYaw, 22f, 5f, 0f, 0f };       // yaw
+        float[] H = { 0f, 0.08f, 0.45f, 0.95f, 1f };     // height fraction
+
+        int seg = 0;
+        while (seg < 3 && g > T[seg + 1]) seg++;
+        float sk = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(T[seg], T[seg + 1], g));
+        float pitchNow = Mathf.Lerp(P[seg], P[seg + 1], sk);
+        float rollNow = Mathf.Lerp(R[seg], R[seg + 1], sk);
+        float yawNow = Mathf.Lerp(Y[seg], Y[seg + 1], sk);
+        float h = Mathf.Lerp(H[seg], H[seg + 1], sk);
+
+        // Effort wobble while pushing up - slow and heavy.
+        float effort = Mathf.Sin(g * Mathf.PI);
+        rollNow += Mathf.Sin(introTimer * 11f) * 1.6f * effort;
+        pitchNow += Mathf.Sin(introTimer * 8f) * 1.1f * effort;
+
+        cameraHolder.localRotation = Quaternion.Euler(pitchNow, yawNow, rollNow);
+        cameraHolder.localPosition = Vector3.Lerp(new Vector3(0f, groundLocalY, 0f), normalPos, h);
+
+        if (g >= 1f)
+        {
+            introPlaying = false;
+            pitch = 0f;
+        }
+    }
+
+    void OnGUI()
+    {
+        if (!introEnabled || !Application.isPlaying) return;
+        float a = 1f - Mathf.Clamp01(introTimer / Mathf.Max(0.1f, introFadeDuration));
+        if (a <= 0f) return;
+        GUI.color = new Color(0f, 0f, 0f, a);
+        GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
+        GUI.color = Color.white;
     }
 
     // ---------------------------------------------------------------- tumble
@@ -234,6 +329,26 @@ public class DrifterController : MonoBehaviour
         switch (tumbleState)
         {
             case 0: // watching for a long slide
+            {
+                if (introPlaying) break;
+
+                if (tumbleSpent)
+                {
+                    // Already fell on this slide - the slope no longer knocks
+                    // us down. Re-arm only after some time on genuinely
+                    // walkable ground (below the slope limit), so standing on
+                    // the same steep face never re-triggers a fall.
+                    if (IsGrounded && CurrentGroundAngle < controller.slopeLimit - 0.5f)
+                        tumbleNotSlidingTime += Time.deltaTime;
+                    else tumbleNotSlidingTime = 0f;
+                    if (tumbleNotSlidingTime >= tumbleRecoverTime)
+                    {
+                        tumbleSpent = false;
+                        tumbleNotSlidingTime = 0f;
+                    }
+                    break;
+                }
+
                 if (IsSliding && HorizontalSpeed > 3f) slidingTime += Time.deltaTime;
                 else slidingTime = 0f;
                 if (slidingTime >= tumbleAfterSliding)
@@ -242,38 +357,64 @@ public class DrifterController : MonoBehaviour
                     tumblePitch = 0f;
                 }
                 break;
+            }
 
-            case 1: // tumbling
+            case 1: // exactly tumbleRolls somersaults, then land
+            {
                 tumblePitch += tumbleSpinSpeed * Time.deltaTime;
                 float wobble = Mathf.Sin(Time.time * 9f) * 10f;
                 cameraHolder.localRotation = Quaternion.Euler(tumblePitch, 0f, wobble);
                 cameraHolder.localPosition = Vector3.Lerp(normalPos,
                     new Vector3(0f, groundLocalY, 0f), 0.85f);
 
-                if (!IsSliding && HorizontalSpeed < 3.5f)
+                if (tumblePitch >= tumbleRolls * 360f)
                 {
                     tumbleState = 2;
                     getUpT = 0f;
-                    // land the spin on the nearest upright angle
                     tumblePitchAtGetUp = Mathf.Repeat(tumblePitch, 360f);
                     if (tumblePitchAtGetUp > 180f) tumblePitchAtGetUp -= 360f;
                 }
                 break;
+            }
 
-            case 2: // getting up
+            case 2: // land flat, then a staged get-up like the intro wake-up
+            {
                 getUpT += Time.deltaTime / Mathf.Max(0.1f, getUpDuration);
-                float k = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(getUpT));
-                float p = Mathf.Lerp(tumblePitchAtGetUp, 0f, k);
-                cameraHolder.localRotation = Quaternion.Euler(pitch * k + p * (1f - k), 0f, 0f);
+                float g = Mathf.Clamp01(getUpT);
+
+                // [spin end] -> flat on the ground -> roll to side -> push up
+                // (looking at the ground) -> almost up -> standing
+                float[] T = { 0f, 0.14f, 0.36f, 0.62f, 0.88f, 1f };
+                float[] P = { tumblePitchAtGetUp, -55f, -12f, 24f, 7f, 0f };
+                float[] R = { 0f, 28f, 65f, 10f, -2f, 0f };
+                float[] Y = { 0f, 12f, 22f, 5f, 0f, 0f };
+                float[] H = { 0f, 0f, 0.08f, 0.45f, 0.95f, 1f };
+
+                int seg = 0;
+                while (seg < 4 && g > T[seg + 1]) seg++;
+                float sk = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(T[seg], T[seg + 1], g));
+                float pitchNow = Mathf.Lerp(P[seg], P[seg + 1], sk);
+                float rollNow = Mathf.Lerp(R[seg], R[seg + 1], sk);
+                float yawNow = Mathf.Lerp(Y[seg], Y[seg + 1], sk);
+                float h = Mathf.Lerp(H[seg], H[seg + 1], sk);
+
+                float effort = Mathf.Sin(g * Mathf.PI);
+                rollNow += Mathf.Sin(Time.time * 11f) * 1.5f * effort;
+
+                cameraHolder.localRotation = Quaternion.Euler(pitchNow, yawNow, rollNow);
                 cameraHolder.localPosition = Vector3.Lerp(
-                    new Vector3(0f, groundLocalY, 0f), normalPos, k);
+                    new Vector3(0f, groundLocalY, 0f), normalPos, h);
 
                 if (getUpT >= 1f)
                 {
                     tumbleState = 0;
                     slidingTime = 0f;
+                    pitch = 0f;
+                    tumbleSpent = true;   // slope won't knock us down again this slide
+                    tumbleNotSlidingTime = 0f;
                 }
                 break;
+            }
         }
     }
 
@@ -294,7 +435,7 @@ public class DrifterController : MonoBehaviour
 
     void HandleLook(Mouse mouse)
     {
-        if (tumbleState != 0) return; // the tumble owns the camera
+        if (tumbleState != 0 || introPlaying) return; // the tumble/intro owns the camera
         if (mouse == null || Cursor.lockState != CursorLockMode.Locked) return;
 
         // Lower sensitivity while zoomed so aiming stays comfortable.
@@ -373,8 +514,8 @@ public class DrifterController : MonoBehaviour
         float inputY = (kb.wKey.isPressed || kb.upArrowKey.isPressed ? 1f : 0f)
                      - (kb.sKey.isPressed || kb.downArrowKey.isPressed ? 1f : 0f);
 
-        // No control while tumbling - you're rolling down a dune.
-        if (tumbleState != 0) { inputX = 0f; inputY = 0f; }
+        // No control while tumbling or during the wake-up intro.
+        if (tumbleState != 0 || introPlaying) { inputX = 0f; inputY = 0f; }
 
         // Limit diagonal speed, exactly like the original.
         float inputModifyFactor = (inputX != 0f && inputY != 0f) ? 0.7071f : 1f;
@@ -407,7 +548,9 @@ public class DrifterController : MonoBehaviour
             IsSprinting = enableRunning && kb.leftShiftKey.isPressed && !IsCrouching;
             speed = IsCrouching ? crouchSpeed : (IsSprinting ? runSpeed : walkSpeed);
 
-            IsSliding = sliding && slideWhenOverSlopeLimit;
+            // After a tumble, the slope no longer takes control away - you
+            // can walk down it freely until the immunity re-arms.
+            IsSliding = sliding && slideWhenOverSlopeLimit && !tumbleSpent;
             if (IsSliding)
             {
                 // Original slide: head straight down the slope, no player control.
@@ -451,7 +594,7 @@ public class DrifterController : MonoBehaviour
         }
 
         // --- jump (with a small coyote-time forgiveness) ---
-        bool canJump = !IsSliding && tumbleState == 0 && (grounded || Time.time - lastGroundedTime <= coyoteTime);
+        bool canJump = !IsSliding && tumbleState == 0 && !introPlaying && (grounded || Time.time - lastGroundedTime <= coyoteTime);
         if (kb.spaceKey.wasPressedThisFrame && canJump)
         {
             moveDirection.y = jumpSpeed;

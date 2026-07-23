@@ -22,7 +22,7 @@ public static class DrifterSetup
         cc.height = 2f;
         cc.radius = 0.5f;
         cc.center = Vector3.zero;          // center pivot, like the prefab
-        cc.slopeLimit = 45f;
+        cc.slopeLimit = 30f; // calibrated to the dune model's real slopes
         cc.stepOffset = 0.3f;
         cc.skinWidth = 0.08f;
         cc.minMoveDistance = 0f;
