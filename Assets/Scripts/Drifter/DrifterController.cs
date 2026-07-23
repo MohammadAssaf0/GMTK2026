@@ -77,6 +77,16 @@ public class DrifterController : MonoBehaviour
     [Tooltip("Extra FOV while sprinting - makes running FEEL fast. 0 = off.")]
     public float sprintFovBoost = 10f;
 
+    [Header("Slide Tumble")]
+    [Tooltip("When sliding down a steep slope, tumble head-over-heels and then get back up.")]
+    public bool tumbleEnabled = true;
+    [Tooltip("The slide must last this long (seconds) before the tumble kicks in.")]
+    public float tumbleAfterSliding = 0.45f;
+    [Tooltip("Tumble spin speed, degrees per second.")]
+    public float tumbleSpinSpeed = 380f;
+    [Tooltip("How long getting back up takes, seconds.")]
+    public float getUpDuration = 0.9f;
+
     [Header("Safety")]
     [Tooltip("Like the prefab's CheckIfBelowLevel: falling below this Y teleports back to the start.")]
     public float resetBelowY = -20f;
@@ -87,6 +97,10 @@ public class DrifterController : MonoBehaviour
     public bool IsCrouching { get; private set; }
     public bool IsSprinting { get; private set; }
     public bool IsZooming { get; private set; }
+    /// <summary>True while tumbling down a slope or getting back up.</summary>
+    public bool IsTumbling => tumbleState != 0;
+    /// <summary>Angle (degrees) of the ground under the player right now.</summary>
+    public float CurrentGroundAngle { get; private set; }
     public float HorizontalSpeed { get; private set; }
     public event System.Action Jumped;
     /// <summary>Fired on landing. Argument = fall speed (m/s, positive).</summary>
@@ -103,6 +117,13 @@ public class DrifterController : MonoBehaviour
     Vector3 contactPoint;
     Vector3 startPosition;
     Quaternion startRotation;
+
+    // tumble state
+    int tumbleState;          // 0 = none, 1 = tumbling, 2 = getting up
+    float slidingTime;
+    float tumblePitch;
+    float tumblePitchAtGetUp;
+    float getUpT;
 
     void Awake()
     {
@@ -195,7 +216,65 @@ public class DrifterController : MonoBehaviour
         HandleZoom(mouse);
         HandleCrouch(kb);
         HandleMovement(kb);
+        UpdateTumble();
         CheckBelowLevel();
+    }
+
+    // ---------------------------------------------------------------- tumble
+    // Slide long enough -> the camera tumbles head-over-heels and drops to
+    // ground level; when the slide ends, a smooth "get up" recovery plays.
+    void UpdateTumble()
+    {
+        if (!tumbleEnabled || cameraHolder == null) { tumbleState = 0; return; }
+
+        // What ApplyHeight set this frame = the normal standing pose.
+        Vector3 normalPos = cameraHolder.localPosition;
+        float groundLocalY = -controller.height * 0.5f + 0.35f; // camera at ground level
+
+        switch (tumbleState)
+        {
+            case 0: // watching for a long slide
+                if (IsSliding && HorizontalSpeed > 3f) slidingTime += Time.deltaTime;
+                else slidingTime = 0f;
+                if (slidingTime >= tumbleAfterSliding)
+                {
+                    tumbleState = 1;
+                    tumblePitch = 0f;
+                }
+                break;
+
+            case 1: // tumbling
+                tumblePitch += tumbleSpinSpeed * Time.deltaTime;
+                float wobble = Mathf.Sin(Time.time * 9f) * 10f;
+                cameraHolder.localRotation = Quaternion.Euler(tumblePitch, 0f, wobble);
+                cameraHolder.localPosition = Vector3.Lerp(normalPos,
+                    new Vector3(0f, groundLocalY, 0f), 0.85f);
+
+                if (!IsSliding && HorizontalSpeed < 3.5f)
+                {
+                    tumbleState = 2;
+                    getUpT = 0f;
+                    // land the spin on the nearest upright angle
+                    tumblePitchAtGetUp = Mathf.Repeat(tumblePitch, 360f);
+                    if (tumblePitchAtGetUp > 180f) tumblePitchAtGetUp -= 360f;
+                }
+                break;
+
+            case 2: // getting up
+                getUpT += Time.deltaTime / Mathf.Max(0.1f, getUpDuration);
+                float k = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(getUpT));
+                float p = Mathf.Lerp(tumblePitchAtGetUp, 0f, k);
+                cameraHolder.localRotation = Quaternion.Euler(pitch * k + p * (1f - k), 0f, 0f);
+                cameraHolder.localPosition = Vector3.Lerp(
+                    new Vector3(0f, groundLocalY, 0f), normalPos, k);
+
+                if (getUpT >= 1f)
+                {
+                    tumbleState = 0;
+                    slidingTime = 0f;
+                }
+                break;
+        }
     }
 
     // ------------------------------------------------------------------ look
@@ -215,6 +294,7 @@ public class DrifterController : MonoBehaviour
 
     void HandleLook(Mouse mouse)
     {
+        if (tumbleState != 0) return; // the tumble owns the camera
         if (mouse == null || Cursor.lockState != CursorLockMode.Locked) return;
 
         // Lower sensitivity while zoomed so aiming stays comfortable.
@@ -293,6 +373,9 @@ public class DrifterController : MonoBehaviour
         float inputY = (kb.wKey.isPressed || kb.upArrowKey.isPressed ? 1f : 0f)
                      - (kb.sKey.isPressed || kb.downArrowKey.isPressed ? 1f : 0f);
 
+        // No control while tumbling - you're rolling down a dune.
+        if (tumbleState != 0) { inputX = 0f; inputY = 0f; }
+
         // Limit diagonal speed, exactly like the original.
         float inputModifyFactor = (inputX != 0f && inputY != 0f) ? 0.7071f : 1f;
 
@@ -318,6 +401,7 @@ public class DrifterController : MonoBehaviour
                 groundNormal = hit.normal;
                 if (Vector3.Angle(hit.normal, Vector3.up) > slideLimit) sliding = true;
             }
+            CurrentGroundAngle = Vector3.Angle(groundNormal, Vector3.up);
 
             // --- speed: crouch < walk < run ---
             IsSprinting = enableRunning && kb.leftShiftKey.isPressed && !IsCrouching;
@@ -367,7 +451,7 @@ public class DrifterController : MonoBehaviour
         }
 
         // --- jump (with a small coyote-time forgiveness) ---
-        bool canJump = !IsSliding && (grounded || Time.time - lastGroundedTime <= coyoteTime);
+        bool canJump = !IsSliding && tumbleState == 0 && (grounded || Time.time - lastGroundedTime <= coyoteTime);
         if (kb.spaceKey.wasPressedThisFrame && canJump)
         {
             moveDirection.y = jumpSpeed;

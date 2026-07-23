@@ -117,20 +117,20 @@ MonoBehaviour:
   brightness: 1.15
   deepObscurance: 0.5
   specularColor: {r: 1, g: 0.85, b: 0.6, a: 1}
-  specularThreshold: 0.6
-  specularIntensity: 0
+  specularThreshold: 0.55
+  specularIntensity: 0.35
   turbulence: 0.8
   windDirection: {x: 0.12, y: 0, z: 0.04}
   useCustomDetailNoiseWindDirection: 0
   detailNoiseWindDirection: {x: 0.03, y: -0.01, z: 0}
-  dayNightCycle: 0
+  dayNightCycle: 1
   sunDirection: {x: 45, y: 45, z: 0}
   sunColor: {r: 1, g: 1, b: 1, a: 1}
-  sunIntensity: 1
+  sunIntensity: 1.15
   ambientLightMultiplier: 0.5
   lightDiffusionModel: 0
-  lightDiffusionPower: 32
-  lightDiffusionIntensity: 0.4
+  lightDiffusionPower: 64
+  lightDiffusionIntensity: 1.1
   lightDiffusionNearDepthAtten: 0
   lightDiffusionBackScatter: 0.3
   diffusionFloor: 1
