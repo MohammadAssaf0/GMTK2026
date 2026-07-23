@@ -3,54 +3,59 @@ using UnityEngine;
 
 /// <summary>
 /// One-click setup: Tools > Drifter > Create Drifter In Scene.
-/// Builds the player hierarchy (body + camera holder + audio) and attaches
-/// the scene's existing Main Camera to the drifter's head, keeping all of
-/// its settings (URP data, post-processing, etc.). Only if no Main Camera
-/// exists is a new one created.
+/// Builds a player identical to Assets/Drifter/Prefabs/Player.prefab
+/// (same dimensions, capsule visual with drifter.mat, camera at 0.7,
+/// tag "Player") but driven by the new Input System scripts.
+/// Attaches the scene's existing Main Camera if there is one.
 /// </summary>
 public static class DrifterSetup
 {
     [MenuItem("Tools/Drifter/Create Drifter In Scene")]
     public static void CreateDrifter()
     {
-        // --- body ---
+        // --- body: exactly like the Player prefab ---
         var body = new GameObject("Drifter");
         Undo.RegisterCreatedObjectUndo(body, "Create Drifter");
+        body.tag = "Player";
 
         var cc = body.AddComponent<CharacterController>();
-        cc.height = 1.8f;
-        cc.radius = 0.35f;
-        cc.center = new Vector3(0f, 0.9f, 0f);
-        cc.slopeLimit = 50f;
-        cc.stepOffset = 0.35f;
-        cc.skinWidth = 0.06f;
+        cc.height = 2f;
+        cc.radius = 0.5f;
+        cc.center = Vector3.zero;          // center pivot, like the prefab
+        cc.slopeLimit = 45f;
+        cc.stepOffset = 0.3f;
+        cc.skinWidth = 0.08f;
+        cc.minMoveDistance = 0f;
 
-        // Place the body in front of the scene view before parenting the camera.
+        // Center pivot: place it 1.2 above the floor like the prefab.
         var sceneView = SceneView.lastActiveSceneView;
         if (sceneView != null)
         {
             Vector3 pos = sceneView.pivot;
-            pos.y += 1f;
+            pos.y += 1.2f;
             body.transform.position = pos;
         }
         else
         {
-            body.transform.position = new Vector3(0f, 1f, 0f);
+            body.transform.position = new Vector3(0f, 1.2f, 0f);
         }
 
-        // --- visible capsule body ---
+        // --- visible capsule body (prefab look: builtin capsule + drifter.mat) ---
         var visual = GameObject.CreatePrimitive(PrimitiveType.Capsule);
         visual.name = "BodyVisual";
-        // The CharacterController handles collision - remove the mesh collider.
-        Object.DestroyImmediate(visual.GetComponent<CapsuleCollider>());
+        Object.DestroyImmediate(visual.GetComponent<CapsuleCollider>()); // CC handles collision
         visual.transform.SetParent(body.transform, false);
-        visual.transform.localPosition = new Vector3(0f, 0.9f, 0f);
-        visual.transform.localScale = new Vector3(0.7f, 0.9f, 0.7f); // matches radius 0.35, height 1.8
+        visual.transform.localPosition = Vector3.zero;   // matches CC center
+        visual.transform.localScale = Vector3.one;       // capsule mesh = height 2, radius 0.5
 
-        // --- camera holder (pitches up/down, moves when crouching) ---
+        var drifterMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/Drifter/drifter.mat");
+        if (drifterMat != null)
+            visual.GetComponent<MeshRenderer>().sharedMaterial = drifterMat;
+
+        // --- camera holder at (0, 0.7, 0), exactly like the prefab's camera ---
         var holder = new GameObject("CameraHolder");
         holder.transform.SetParent(body.transform, false);
-        holder.transform.localPosition = new Vector3(0f, 1.62f, 0f);
+        holder.transform.localPosition = new Vector3(0f, 0.7f, 0f);
 
         // --- find the scene's Main Camera (even if it was disabled) ---
         Camera cam = null;
@@ -64,7 +69,6 @@ public static class DrifterSetup
         GameObject camGo;
         if (cam != null)
         {
-            // Attach the existing Main Camera to the drifter's head.
             camGo = cam.gameObject;
             Undo.RecordObject(camGo.transform, "Attach Main Camera");
             Undo.SetTransformParent(camGo.transform, holder.transform, "Attach Main Camera");
@@ -81,8 +85,9 @@ public static class DrifterSetup
             camGo.tag = "MainCamera";
         }
 
+        // Prefab camera settings.
         cam.fieldOfView = 60f;
-        cam.nearClipPlane = 0.05f;
+        cam.nearClipPlane = 0.3f;
         cam.enabled = true;
 
         var camListener = camGo.GetComponent<AudioListener>();
@@ -119,6 +124,6 @@ public static class DrifterSetup
 
         Selection.activeGameObject = body;
         EditorGUIUtility.PingObject(body);
-        Debug.Log("Drifter created with the scene's Main Camera attached. WASD move | Shift sprint | Space jump | Command/Ctrl crouch | Right mouse zoom.");
+        Debug.Log("Drifter created (Player-prefab twin). WASD move | Shift run | Space jump | Command/Ctrl crouch | Right mouse zoom.");
     }
 }

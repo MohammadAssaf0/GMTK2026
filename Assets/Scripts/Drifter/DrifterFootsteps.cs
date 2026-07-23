@@ -1,13 +1,14 @@
 using UnityEngine;
 
 /// <summary>
-/// Footsteps for the Drifter - both AUDIO (footstep sounds whose rate and
-/// volume follow walking / sprinting / crouching) and VISUAL (head-bob on
-/// the camera, synced so each "step" of the bob triggers a sound).
+/// Footsteps for the Drifter - VISUAL head-bob identical to the Player
+/// prefab's HeadBob (same formula and values: baseBobSpeed 6, baseBobAmount
+/// 0.02, runMultiplier 3, smooth 8), plus AUDIO footsteps synced to the bob
+/// cycle, with rate and volume following walk / run / crouch.
 ///
 /// Works out of the box: if no audio clips are assigned it synthesizes a
-/// soft procedural step sound at startup, so you hear footsteps immediately.
-/// Drop your own clips into <see cref="footstepClips"/> whenever you have them.
+/// soft procedural step sound at startup. Drop your own clips into
+/// <see cref="footstepClips"/> whenever you have them.
 /// </summary>
 [RequireComponent(typeof(DrifterController))]
 public class DrifterFootsteps : MonoBehaviour
@@ -17,19 +18,16 @@ public class DrifterFootsteps : MonoBehaviour
     public Transform bobTarget;
     public AudioSource audioSource;
 
-    [Header("Head Bob (visual)")]
+    [Header("Head Bob (Player prefab values)")]
     public bool headBobEnabled = true;
-    [Tooltip("Steps per second while walking.")]
-    public float stepFrequency = 1.8f;
-    public float sprintFrequencyMultiplier = 1.4f;
-    public float crouchFrequencyMultiplier = 0.75f;
-    [Tooltip("Vertical bob amplitude in meters.")]
-    public float bobHeight = 0.05f;
-    [Tooltip("Horizontal sway amplitude in meters.")]
-    public float bobSway = 0.03f;
-    [Tooltip("Slight roll of the camera while walking, in degrees.")]
-    public float bobRoll = 0.4f;
-    public float bobSmoothing = 8f;
+    [Tooltip("Base bob frequency (radians/sec). Prefab value: 6.")]
+    public float baseBobSpeed = 6f;
+    [Tooltip("Base bob height in meters. Prefab value: 0.02.")]
+    public float baseBobAmount = 0.02f;
+    [Tooltip("How much speed increases bob frequency. Prefab value: 3.")]
+    public float runMultiplier = 3f;
+    [Tooltip("Interpolation speed. Prefab value: 8.")]
+    public float smooth = 8f;
 
     [Header("Audio")]
     public AudioClip[] footstepClips;
@@ -42,12 +40,13 @@ public class DrifterFootsteps : MonoBehaviour
     [Range(0f, 0.5f)] public float pitchJitter = 0.12f;
 
     DrifterController drifter;
-    float bobPhase;          // grows by 1.0 per step
+    float timer;             // bob phase in radians, same as HeadBob
+    float currentY;
     int lastStepIndex;
-    Vector3 bobOffset;
-    float rollOffset;
     AudioClip synthStep;     // procedural fallback
     AudioClip synthLand;
+
+    const float TwoPi = Mathf.PI * 2f;
 
     void Awake()
     {
@@ -83,49 +82,40 @@ public class DrifterFootsteps : MonoBehaviour
 
     void Update()
     {
-        bool moving = drifter.IsGrounded && !drifter.IsSliding && drifter.HorizontalSpeed > 0.2f;
+        float speed = drifter.HorizontalSpeed;
+        bool moving = drifter.IsGrounded && !drifter.IsSliding && speed > 0.1f;
 
         if (moving)
         {
-            float freq = stepFrequency;
-            if (drifter.IsSprinting) freq *= sprintFrequencyMultiplier;
-            if (drifter.IsCrouching) freq *= crouchFrequencyMultiplier;
+            // --- exact HeadBob formula from the Player prefab ---
+            float bobSpeed = baseBobSpeed + speed * runMultiplier * 0.2f;
+            float bobAmount = baseBobAmount + speed * 0.02f;
 
-            // Scale bob rate a bit with actual speed so slow strafing = slow steps.
-            float speedFactor = Mathf.Clamp(drifter.HorizontalSpeed / 4.5f, 0.5f, 1.6f);
-            bobPhase += Time.deltaTime * freq * speedFactor;
+            timer += Time.deltaTime * bobSpeed;
+            float targetY = Mathf.Sin(timer) * bobAmount;
+            currentY = Mathf.Lerp(currentY, targetY, Time.deltaTime * smooth);
 
-            // --- audio: one footstep sound each time the phase completes a step ---
-            int stepIndex = Mathf.FloorToInt(bobPhase);
+            // --- audio: one footstep per bob cycle (at the trough) ---
+            int stepIndex = Mathf.FloorToInt((timer + Mathf.PI * 0.5f) / TwoPi);
             if (stepIndex != lastStepIndex)
             {
                 lastStepIndex = stepIndex;
                 PlayFootstep();
             }
-
-            // --- visual: classic figure-8 head bob ---
-            if (headBobEnabled && bobTarget != null)
-            {
-                float amp = drifter.IsCrouching ? 0.6f : (drifter.IsSprinting ? 1.3f : 1f);
-                float t = bobPhase * Mathf.PI; // half period per step
-                Vector3 target = new Vector3(
-                    Mathf.Sin(t) * bobSway * amp,
-                    -Mathf.Abs(Mathf.Sin(t)) * bobHeight * amp,
-                    0f);
-                bobOffset = Vector3.Lerp(bobOffset, target, bobSmoothing * Time.deltaTime);
-                rollOffset = Mathf.Lerp(rollOffset, Mathf.Sin(t) * bobRoll * amp, bobSmoothing * Time.deltaTime);
-            }
         }
-        else if (bobTarget != null)
+        else
         {
-            bobOffset = Vector3.Lerp(bobOffset, Vector3.zero, bobSmoothing * Time.deltaTime);
-            rollOffset = Mathf.Lerp(rollOffset, 0f, bobSmoothing * Time.deltaTime);
+            // Reset phase and return smoothly, exactly like HeadBob.
+            timer = 0f;
+            lastStepIndex = 0;
+            currentY = Mathf.Lerp(currentY, 0f, Time.deltaTime * smooth);
         }
 
-        if (bobTarget != null)
+        if (headBobEnabled && bobTarget != null)
         {
-            bobTarget.localPosition = bobOffset;
-            bobTarget.localRotation = Quaternion.Euler(0f, 0f, rollOffset);
+            Vector3 localPos = bobTarget.localPosition;
+            localPos.y = currentY;
+            bobTarget.localPosition = localPos;
         }
     }
 
@@ -169,7 +159,7 @@ public class DrifterFootsteps : MonoBehaviour
         float volume = Mathf.Lerp(0.3f, 1f, Mathf.InverseLerp(2f, 12f, fallSpeed)) * footstepVolume;
         audioSource.pitch = 1f + Random.Range(-pitchJitter, pitchJitter) * 0.5f;
         audioSource.PlayOneShot(clip, volume);
-        bobPhase = 0f;
+        timer = 0f;
         lastStepIndex = 0;
     }
 

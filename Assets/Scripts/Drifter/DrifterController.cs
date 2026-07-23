@@ -2,20 +2,24 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// First-person "Drifter" controller for GMTK2026.
+/// First-person Drifter controller - a faithful port of the classic
+/// FirstPersonDrifter (Assets/Drifter/Prefabs/Player.prefab) to the new
+/// Input System, with crouch + zoom + slope-relative speed added.
+///
+/// Matches the Player prefab exactly:
+///   - Center-pivot CharacterController: height 2, radius 0.5, center (0,0,0)
+///   - walkSpeed 5, runSpeed 10, jumpSpeed 4, gravity 10, full air control
+///   - Instant velocity changes (no acceleration ramp), diagonal speed limited
+///   - antiBumpFactor 0.75 so walking down slopes doesn't bump
+///   - Slides down slopes steeper than the controller's slope limit
+///   - Pushes rigidbodies it walks into
+///   - Camera at local (0, 0.7, 0) - eye 0.3 below the capsule top
+///   - Resets the player if it falls below resetBelowY (like CheckIfBelowLevel)
 ///
 /// Controls:
-///   WASD / Arrows  - walk
-///   Left Shift     - sprint
-///   Space          - jump
-///   Command / Ctrl - crouch (hold)
-///   Right mouse    - zoom (hold)
-///   Mouse          - look around
-///   Esc            - release cursor, click to re-capture
-///
-/// Walks on ANY collider (not just terrain), slides down slopes steeper
-/// than <see cref="slideAngle"/>, and walking speed is affected by slope
-/// (slower uphill, faster downhill).
+///   WASD / Arrows  - walk        | Left Shift  - run
+///   Space          - jump        | Command/Ctrl - crouch (hold)
+///   Right mouse    - zoom (hold) | Esc - release cursor, click re-captures
 /// </summary>
 [RequireComponent(typeof(CharacterController))]
 public class DrifterController : MonoBehaviour
@@ -27,44 +31,51 @@ public class DrifterController : MonoBehaviour
     [Tooltip("Visible capsule body. Scales down automatically when crouching.")]
     public Transform bodyVisual;
 
-    [Header("Movement")]
-    public float walkSpeed = 4.5f;
-    public float sprintSpeed = 8.0f;
-    public float crouchSpeed = 2.2f;
-    [Tooltip("How quickly the drifter reaches target speed on the ground.")]
-    public float acceleration = 14f;
-    [Range(0f, 1f), Tooltip("Fraction of control kept while airborne.")]
-    public float airControl = 0.4f;
+    [Header("Movement (Player prefab values)")]
+    public float walkSpeed = 5f;
+    public float runSpeed = 10f;
+    public bool enableRunning = true;
+    public float crouchSpeed = 2.5f;
+    [Tooltip("If true, direction changes mid-air work exactly like on the ground.")]
+    public bool airControl = true;
+    [Tooltip("Downward push while grounded so walking down slopes doesn't bump. 0.75 = prefab value.")]
+    public float antiBumpFactor = 0.75f;
 
-    [Header("Jump & Gravity")]
-    public float jumpHeight = 1.2f;
-    public float gravity = -22f;
+    [Header("Jump & Gravity (Player prefab values)")]
+    [Tooltip("Vertical launch velocity, exactly like the prefab (not jump height).")]
+    public float jumpSpeed = 4f;
+    [Tooltip("Positive value, like the prefab. 10 = the floaty drifter feel.")]
+    public float gravity = 10f;
     [Tooltip("Grace period after stepping off a ledge in which a jump is still allowed.")]
     public float coyoteTime = 0.12f;
 
     [Header("Slopes")]
-    [Tooltip("Above this ground angle (degrees) the drifter slides downhill.")]
-    public float slideAngle = 45f;
-    public float slideAcceleration = 20f;
-    public float maxSlideSpeed = 14f;
-    [Range(0f, 1f), Tooltip("How much slope affects walk speed: slower uphill, faster downhill.")]
+    [Tooltip("Slide down slopes steeper than the CharacterController's Slope Limit.")]
+    public bool slideWhenOverSlopeLimit = true;
+    [Tooltip("Slide speed, same model as the prefab's FirstPersonDrifter.")]
+    public float slideSpeed = 5f;
+    [Range(0f, 1f), Tooltip("How much slope affects walk speed: slower uphill, faster downhill. 0 = off (prefab behavior).")]
     public float slopeSpeedInfluence = 0.35f;
 
     [Header("Crouch")]
-    public float standHeight = 1.8f;
-    public float crouchHeight = 1.0f;
+    public float standHeight = 2f;
+    public float crouchHeight = 1.2f;
     public float crouchTransitionSpeed = 10f;
-    [Tooltip("Camera height as a fraction of body height.")]
-    public float eyeHeightRatio = 0.9f;
+    [Tooltip("Eye distance below the top of the capsule. 0.3 = prefab camera position.")]
+    public float eyeOffsetFromTop = 0.3f;
 
-    [Header("Mouse Look")]
+    [Header("Mouse Look (prefab: +-85 degrees)")]
     public float mouseSensitivity = 0.12f;
-    public float maxLookAngle = 89f;
+    public float maxLookAngle = 85f;
 
-    [Header("Zoom (Right Mouse)")]
+    [Header("Zoom (Player prefab values)")]
     public float normalFov = 60f;
     public float zoomFov = 30f;
-    public float zoomSpeed = 12f;
+    public float zoomSpeed = 9f;
+
+    [Header("Safety")]
+    [Tooltip("Like the prefab's CheckIfBelowLevel: falling below this Y teleports back to the start.")]
+    public float resetBelowY = -20f;
 
     // ---- Public state (read by DrifterFootsteps and anything else) ----
     public bool IsGrounded { get; private set; }
@@ -72,24 +83,22 @@ public class DrifterController : MonoBehaviour
     public bool IsCrouching { get; private set; }
     public bool IsSprinting { get; private set; }
     public bool IsZooming { get; private set; }
-    /// <summary>Horizontal speed in m/s.</summary>
     public float HorizontalSpeed { get; private set; }
-    /// <summary>Vertical velocity right before the last landing (negative = falling).</summary>
-    public float LastLandingSpeed { get; private set; }
-    /// <summary>Fired the frame the drifter jumps.</summary>
     public event System.Action Jumped;
-    /// <summary>Fired the frame the drifter lands. Argument = fall speed (m/s, positive).</summary>
+    /// <summary>Fired on landing. Argument = fall speed (m/s, positive).</summary>
     public event System.Action<float> Landed;
 
     CharacterController controller;
-    Vector3 horizontalVelocity;
-    Vector3 slideVelocity;
-    float verticalVelocity;
+    Vector3 moveDirection = Vector3.zero;   // same model as FirstPersonDrifter
+    bool grounded;
+    bool playerControl;
+    float speed;
     float pitch;
     float lastGroundedTime = -99f;
-    bool wasGrounded;
-    Vector3 groundNormal = Vector3.up;
     float currentHeight;
+    Vector3 contactPoint;
+    Vector3 startPosition;
+    Quaternion startRotation;
 
     void Awake()
     {
@@ -100,11 +109,15 @@ public class DrifterController : MonoBehaviour
         if (playerCamera == null) playerCamera = GetComponentInChildren<Camera>();
         if (cameraHolder == null && playerCamera != null) cameraHolder = playerCamera.transform.parent;
         if (playerCamera != null) playerCamera.fieldOfView = normalFov;
+
+        startPosition = transform.position;
+        startRotation = transform.rotation;
     }
 
     void Start()
     {
         LockCursor(true);
+        speed = walkSpeed;
     }
 
     void Update()
@@ -116,26 +129,9 @@ public class DrifterController : MonoBehaviour
         HandleCursor(kb, mouse);
         HandleLook(mouse);
         HandleZoom(mouse);
-
-        ReadGround();
         HandleCrouch(kb);
         HandleMovement(kb);
-
-        // Combine and move.
-        Vector3 motion = horizontalVelocity + slideVelocity + Vector3.up * verticalVelocity;
-        controller.Move(motion * Time.deltaTime);
-
-        // Grounded state AFTER Move (Unity updates isGrounded inside Move).
-        bool groundedNow = controller.isGrounded;
-        if (groundedNow) lastGroundedTime = Time.time;
-        if (groundedNow && !wasGrounded)
-        {
-            LastLandingSpeed = Mathf.Max(0f, -verticalVelocity);
-            Landed?.Invoke(LastLandingSpeed);
-        }
-        wasGrounded = groundedNow;
-        IsGrounded = groundedNow;
-        HorizontalSpeed = new Vector3(controller.velocity.x, 0f, controller.velocity.z).magnitude;
+        CheckBelowLevel();
     }
 
     // ------------------------------------------------------------------ look
@@ -175,28 +171,10 @@ public class DrifterController : MonoBehaviour
         playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, target, zoomSpeed * Time.deltaTime);
     }
 
-    // ---------------------------------------------------------------- ground
-
-    void ReadGround()
-    {
-        groundNormal = Vector3.up;
-        float castRadius = controller.radius * 0.95f;
-        Vector3 origin = transform.position + controller.center;
-        float castDistance = controller.height * 0.5f + 0.3f;
-        if (Physics.SphereCast(origin, castRadius, Vector3.down, out RaycastHit hit,
-                castDistance, ~0, QueryTriggerInteraction.Ignore))
-        {
-            groundNormal = hit.normal;
-        }
-    }
-
-    float GroundAngle => Vector3.Angle(groundNormal, Vector3.up);
-
     // ---------------------------------------------------------------- crouch
 
     void HandleCrouch(Keyboard kb)
     {
-        // Command on Mac; Ctrl works too (e.g. when Command is captured by the OS, or on Windows).
         bool wantCrouch = kb.leftCommandKey.isPressed || kb.rightCommandKey.isPressed
                        || kb.leftCtrlKey.isPressed;
 
@@ -211,87 +189,161 @@ public class DrifterController : MonoBehaviour
 
     bool CanStandUp()
     {
-        Vector3 bottom = transform.position + Vector3.up * controller.radius;
+        // Capsule bottom stays planted; check clearance above the head.
+        Vector3 bottomSphere = transform.position + controller.center
+                             + Vector3.up * (controller.radius - controller.height * 0.5f);
         float clearance = standHeight - controller.radius * 2f + 0.05f;
-        return !Physics.SphereCast(bottom, controller.radius * 0.95f, Vector3.up,
+        return !Physics.SphereCast(bottomSphere, controller.radius * 0.95f, Vector3.up,
             out _, clearance, ~0, QueryTriggerInteraction.Ignore);
     }
 
     void ApplyHeight(float height)
     {
+        // Center pivot like the Player prefab: standing center = (0,0,0).
+        // While crouching, the center drops so the feet stay planted.
+        float centerY = (height - standHeight) * 0.5f;
         controller.height = height;
-        controller.center = new Vector3(0f, height * 0.5f, 0f);
+        controller.center = new Vector3(0f, centerY, 0f);
+
+        // Eye stays a fixed distance below the capsule top (prefab: 0.7 = 1.0 - 0.3).
+        float topY = centerY + height * 0.5f;
         if (cameraHolder != null)
-            cameraHolder.localPosition = new Vector3(0f, height * eyeHeightRatio, 0f);
+            cameraHolder.localPosition = new Vector3(0f, topY - eyeOffsetFromTop, 0f);
+
         if (bodyVisual != null)
         {
-            // Unity's capsule mesh is 2m tall at scale 1, so scaleY = height / 2.
-            Vector3 s = bodyVisual.localScale;
-            bodyVisual.localScale = new Vector3(s.x, height * 0.5f, s.z);
-            bodyVisual.localPosition = new Vector3(0f, height * 0.5f, 0f);
+            // Unity's capsule mesh: height 2, radius 0.5 at scale 1 - the prefab's exact look.
+            bodyVisual.localPosition = controller.center;
+            bodyVisual.localScale = new Vector3(controller.radius * 2f, height * 0.5f, controller.radius * 2f);
         }
     }
 
     // -------------------------------------------------------------- movement
+    // Direct port of FirstPersonDrifter.FixedUpdate to the new Input System.
 
     void HandleMovement(Keyboard kb)
     {
-        // --- input direction ---
-        float x = (kb.dKey.isPressed || kb.rightArrowKey.isPressed ? 1f : 0f)
-                - (kb.aKey.isPressed || kb.leftArrowKey.isPressed ? 1f : 0f);
-        float z = (kb.wKey.isPressed || kb.upArrowKey.isPressed ? 1f : 0f)
-                - (kb.sKey.isPressed || kb.downArrowKey.isPressed ? 1f : 0f);
-        Vector3 wishDir = Vector3.ClampMagnitude(transform.right * x + transform.forward * z, 1f);
+        float inputX = (kb.dKey.isPressed || kb.rightArrowKey.isPressed ? 1f : 0f)
+                     - (kb.aKey.isPressed || kb.leftArrowKey.isPressed ? 1f : 0f);
+        float inputY = (kb.wKey.isPressed || kb.upArrowKey.isPressed ? 1f : 0f)
+                     - (kb.sKey.isPressed || kb.downArrowKey.isPressed ? 1f : 0f);
 
-        IsSprinting = kb.leftShiftKey.isPressed && !IsCrouching && z > 0f;
-        float targetSpeed = IsCrouching ? crouchSpeed : (IsSprinting ? sprintSpeed : walkSpeed);
+        // Limit diagonal speed, exactly like the original.
+        float inputModifyFactor = (inputX != 0f && inputY != 0f) ? 0.7071f : 1f;
 
-        bool onGround = controller.isGrounded;
-        float angle = GroundAngle;
-        Vector3 slopeDown = Vector3.ProjectOnPlane(Vector3.down, groundNormal);
-        if (slopeDown.sqrMagnitude > 0.0001f) slopeDown.Normalize(); else slopeDown = Vector3.zero;
+        bool wasGrounded = grounded;
 
-        // --- walk speed relative to slope: slower uphill, faster downhill ---
-        if (onGround && wishDir.sqrMagnitude > 0.01f && angle > 1f && angle <= slideAngle)
+        if (grounded)
         {
-            float downhill = Vector3.Dot(wishDir.normalized, slopeDown); // 1 downhill, -1 uphill
-            float steepness = Mathf.Clamp01(angle / slideAngle);
-            targetSpeed *= 1f + downhill * steepness * slopeSpeedInfluence;
+            lastGroundedTime = Time.time;
+
+            // --- detect a too-steep slope under our feet (original method) ---
+            bool sliding = false;
+            RaycastHit hit;
+            float rayDistance = controller.height * 0.5f + controller.radius;
+            float slideLimit = controller.slopeLimit - 0.1f;
+            Vector3 groundNormal = Vector3.up;
+            if (Physics.Raycast(transform.position + controller.center, -Vector3.up, out hit, rayDistance))
+            {
+                groundNormal = hit.normal;
+                if (Vector3.Angle(hit.normal, Vector3.up) > slideLimit) sliding = true;
+            }
+            else if (Physics.Raycast(contactPoint + Vector3.up, -Vector3.up, out hit))
+            {
+                groundNormal = hit.normal;
+                if (Vector3.Angle(hit.normal, Vector3.up) > slideLimit) sliding = true;
+            }
+
+            // --- speed: crouch < walk < run ---
+            IsSprinting = enableRunning && kb.leftShiftKey.isPressed && !IsCrouching;
+            speed = IsCrouching ? crouchSpeed : (IsSprinting ? runSpeed : walkSpeed);
+
+            IsSliding = sliding && slideWhenOverSlopeLimit;
+            if (IsSliding)
+            {
+                // Original slide: head straight down the slope, no player control.
+                Vector3 hitNormal = groundNormal;
+                moveDirection = new Vector3(hitNormal.x, -hitNormal.y, hitNormal.z);
+                Vector3.OrthoNormalize(ref hitNormal, ref moveDirection);
+                moveDirection *= slideSpeed;
+                playerControl = false;
+            }
+            else
+            {
+                moveDirection = new Vector3(inputX * inputModifyFactor, -antiBumpFactor, inputY * inputModifyFactor);
+                moveDirection = transform.TransformDirection(moveDirection) * speed;
+                playerControl = true;
+
+                // Walk speed relative to slope: slower uphill, faster downhill (addition).
+                float angle = Vector3.Angle(groundNormal, Vector3.up);
+                if (slopeSpeedInfluence > 0f && angle > 1f && angle <= controller.slopeLimit)
+                {
+                    Vector3 slopeDown = Vector3.ProjectOnPlane(Vector3.down, groundNormal).normalized;
+                    Vector3 flatMove = new Vector3(moveDirection.x, 0f, moveDirection.z);
+                    if (flatMove.sqrMagnitude > 0.01f)
+                    {
+                        float downhill = Vector3.Dot(flatMove.normalized, slopeDown);
+                        float factor = 1f + downhill * (angle / controller.slopeLimit) * slopeSpeedInfluence;
+                        moveDirection.x *= factor;
+                        moveDirection.z *= factor;
+                    }
+                }
+            }
+        }
+        else if (airControl && playerControl)
+        {
+            // Full air control, exactly like the prefab (airControl = true).
+            moveDirection.x = inputX * speed * inputModifyFactor;
+            moveDirection.z = inputY * speed * inputModifyFactor;
+            Vector3 flat = new Vector3(moveDirection.x, 0f, moveDirection.z);
+            flat = transform.TransformDirection(flat);
+            moveDirection.x = flat.x;
+            moveDirection.z = flat.z;
         }
 
-        // --- steep slope: slide downhill ---
-        IsSliding = onGround && angle > slideAngle;
-        if (IsSliding)
+        // --- jump (with a small coyote-time forgiveness) ---
+        bool canJump = !IsSliding && (grounded || Time.time - lastGroundedTime <= coyoteTime);
+        if (kb.spaceKey.wasPressedThisFrame && canJump)
         {
-            slideVelocity += slopeDown * slideAcceleration * Time.deltaTime;
-            slideVelocity = Vector3.ClampMagnitude(slideVelocity, maxSlideSpeed);
-            targetSpeed *= 0.4f; // little control while sliding
-        }
-        else
-        {
-            // Decay the slide quickly once back on walkable ground.
-            slideVelocity = Vector3.MoveTowards(slideVelocity, Vector3.zero,
-                slideAcceleration * 2f * Time.deltaTime);
-        }
-
-        // --- accelerate toward wish velocity ---
-        float control = onGround ? 1f : airControl;
-        horizontalVelocity = Vector3.MoveTowards(horizontalVelocity, wishDir * targetSpeed,
-            acceleration * control * Time.deltaTime);
-
-        // --- gravity & jump ---
-        if (onGround && verticalVelocity < 0f)
-            verticalVelocity = -3f; // stick to the ground / slopes
-
-        bool jumpPressed = kb.spaceKey.wasPressedThisFrame;
-        bool canJump = (onGround || Time.time - lastGroundedTime <= coyoteTime) && !IsSliding;
-        if (jumpPressed && canJump)
-        {
-            verticalVelocity = Mathf.Sqrt(2f * -gravity * jumpHeight);
-            lastGroundedTime = -99f; // consume coyote time
+            moveDirection.y = jumpSpeed;
+            lastGroundedTime = -99f;
+            grounded = false;
             Jumped?.Invoke();
         }
 
-        verticalVelocity += gravity * Time.deltaTime;
+        // --- gravity (prefab model: positive value, subtracted) ---
+        moveDirection.y -= gravity * Time.deltaTime;
+
+        float fallSpeed = -moveDirection.y;
+        grounded = (controller.Move(moveDirection * Time.deltaTime) & CollisionFlags.Below) != 0;
+
+        if (grounded && !wasGrounded)
+            Landed?.Invoke(Mathf.Max(0f, fallSpeed));
+
+        IsGrounded = grounded;
+        HorizontalSpeed = new Vector3(controller.velocity.x, 0f, controller.velocity.z).magnitude;
+    }
+
+    // Push rigidbodies + remember the contact point, exactly like the original.
+    void OnControllerColliderHit(ControllerColliderHit hit)
+    {
+        contactPoint = hit.point;
+
+        Rigidbody body = hit.collider.attachedRigidbody;
+        if (body == null || body.isKinematic) return;
+
+        Vector3 pushDir = new Vector3(hit.moveDirection.x, 0f, hit.moveDirection.z);
+        body.AddForce(pushDir * speed * 10f, ForceMode.Force);
+    }
+
+    // Like the prefab's CheckIfBelowLevel (resetBelowThisY: -20).
+    void CheckBelowLevel()
+    {
+        if (transform.position.y < resetBelowY)
+        {
+            moveDirection = Vector3.zero;
+            transform.SetPositionAndRotation(startPosition, startRotation);
+            Physics.SyncTransforms();
+        }
     }
 }
