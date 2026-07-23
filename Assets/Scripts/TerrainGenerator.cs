@@ -2,6 +2,10 @@ using UnityEngine;
 
 public class DuneGenerator : MonoBehaviour
 {
+    [Header("Editor Settings")]
+    [Tooltip("Update terrain instantly as you drag sliders. Turn off if the editor lags!")]
+    [SerializeField] private bool autoUpdate = true;
+
     [Header("Terrain Reference")]
     [SerializeField] private Terrain targetTerrain;
 
@@ -18,11 +22,31 @@ public class DuneGenerator : MonoBehaviour
     [Tooltip("Change these values to 'scroll' through the infinite noise map to find a seed you like.")]
     [SerializeField] private Vector2 noiseOffset;
 
-    // This attribute lets you right-click the component in the Inspector to run the function without pressing Play.
+    // Unity calls this whenever a value changes in the Inspector
+    private void OnValidate()
+    {
+        if (autoUpdate && targetTerrain != null && targetTerrain.terrainData != null)
+        {
+            // We use delayCall to avoid Unity throwing errors about modifying TerrainData during serialization
+            #if UNITY_EDITOR
+            UnityEditor.EditorApplication.delayCall -= GenerateSafe; // Prevent queued up calls from stacking
+            UnityEditor.EditorApplication.delayCall += GenerateSafe;
+            #endif
+        }
+    }
+
+    #if UNITY_EDITOR
+    private void GenerateSafe()
+    {
+        // Ensure the script hasn't been deleted before the delayed call runs
+        if (this == null || targetTerrain == null) return;
+        Generate();
+    }
+    #endif
+
     [ContextMenu("Generate Dunes")]
     public void Generate()
     {
-        // Fallback if you drop the script directly onto the Terrain object
         if (targetTerrain == null)
         {
             targetTerrain = GetComponent<Terrain>();
@@ -42,27 +66,17 @@ public class DuneGenerator : MonoBehaviour
         {
             for (int y = 0; y < length; y++)
             {
-                // Calculate coordinates
                 float xCoord = (float)x / width * scale + noiseOffset.x;
                 float yCoord = (float)y / length * scale + noiseOffset.y;
 
-                // 1. Get raw Perlin noise (0 to 1)
                 float p = Mathf.PerlinNoise(xCoord, yCoord);
-
-                // 2. Fold into sharp ridges
                 float ridge = 1f - Mathf.Abs(p * 2f - 1f);
-
-                // 3. Pinch the crests using the power function
                 float duneHeight = Mathf.Pow(ridge, ridgeSharpness);
 
-                // Unity's SetHeights expects values between 0.0 and 1.0. 
-                // We divide our desired height by the terrain's maximum possible Y size to normalize it.
                 heights[x, y] = duneHeight * (heightMultiplier / terrainData.size.y);
             }
         }
 
-        // Push the array to the terrain
         terrainData.SetHeights(0, 0, heights);
-        Debug.Log("Dunes successfully generated!");
     }
 }

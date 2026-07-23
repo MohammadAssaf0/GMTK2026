@@ -381,6 +381,7 @@ GameObject:
   - component: {fileID: 560349228}
   - component: {fileID: 560349227}
   - component: {fileID: 560349226}
+  - component: {fileID: 560349230}
   m_Layer: 0
   m_Name: Terrain
   m_TagString: Untagged
@@ -400,11 +401,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4059140e8ee33d74cbb4f3e8803f2585, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DuneGenerator
+  autoUpdate: 1
   targetTerrain: {fileID: 560349228}
-  scale: 3
-  heightMultiplier: 20
-  ridgeSharpness: 2.5
-  noiseOffset: {x: 2.32, y: 2.27}
+  scale: 7.94
+  heightMultiplier: 15.5
+  ridgeSharpness: 1.49
+  noiseOffset: {x: 3.68, y: 2.27}
 --- !u!154 &560349227
 TerrainCollider:
   m_ObjectHideFlags: 0
@@ -480,6 +482,31 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &560349230
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 560349225}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0decf4e0564ba654292dba604efdfc75, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TextureGenerator
+  terrainLayer: {fileID: 8574412962073106934, guid: 052304aeffdd74647bf58401d886a188, type: 2}
+  previewResolution: 125
+  bakeResolution: 1024
+  baseFrequency: 15
+  windStretch: 0.1
+  ridgePinch: 0.5
+  disruptionFrequencyMultiplier: 0
+  disruptionBlend: 0
+  sandHighlightColor: {r: 0.88, g: 0.78, b: 0.6, a: 1}
+  sandShadowColor: {r: 0.75, g: 0.65, b: 0.45, a: 1}
+  normalBumpStrength: 0.1
+  normalZDepth: 0.5
+  exportFolderName: Texture of the sand
 --- !u!1 &2126405679
 GameObject:
   m_ObjectHideFlags: 0
