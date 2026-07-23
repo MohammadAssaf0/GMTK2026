@@ -48,8 +48,8 @@ public class SandstormController : MonoBehaviour
     public float distantFogDensity = 0.6f;
     [Tooltip("Color of the horizon haze. Match it to the storm's sand tone.")]
     public Color distantFogColor = new Color(0.8f, 0.65f, 0.47f, 1f);
-    [Range(0f, 2f), Tooltip("How quickly the haze thins with altitude (lower = more of the sky gets tinted).")]
-    public float distantFogHeightDensity = 0.35f;
+    [Range(0f, 2f), Tooltip("How much the haze varies with altitude. Keep LOW (~0.05) - high values create a dense 'cloud floor' that looks like a new cloud when descending into valleys.")]
+    public float distantFogHeightDensity = 0.05f;
 
     [Header("Gusts")]
     public bool gusts = true;
@@ -57,6 +57,10 @@ public class SandstormController : MonoBehaviour
     public float gustSpeed = 0.15f;
     [Range(0f, 1f), Tooltip("How much gusts change the storm (density, sound, particles).")]
     public float gustStrength = 0.45f;
+
+    [Header("Debug")]
+    [Tooltip("Shows a live overlay in-game and writes sandstorm-debug.log in the project folder. Flags teleports and moments the player exits the fog layer. Turn OFF for builds.")]
+    public bool debugMode = true;
 
     [Header("Wind Audio")]
     public bool windAudio = true;
@@ -221,6 +225,8 @@ public class SandstormController : MonoBehaviour
             vel.speedModifierMultiplier = baseParticleSpeed * smoothedGust * Mathf.Max(0.2f, intensity);
         }
 
+        DebugTick();
+
         // --- wind howls with the gusts (with a gentle fade-in at start) ---
         if (windAudioSource != null)
         {
@@ -242,9 +248,91 @@ public class SandstormController : MonoBehaviour
         if (player == null) return;
         Vector3 target = player.position + followOffset;
         if (!followPlayerHeight) target.y = transform.position.y;
-        transform.position = followSmoothing > 0f
+        Vector3 pos = followSmoothing > 0f
             ? Vector3.Lerp(transform.position, target, followSmoothing * Time.deltaTime)
             : target;
+
+        if (followPlayerHeight)
+        {
+            // Hard guarantee: even in fast falls or slides down dunes, the
+            // player can never slip out of the fog layer vertically. The
+            // smoothing may lag, but this clamp keeps the slab around him.
+            float margin = Mathf.Min(4f, stormHeight * 0.2f);
+            float minRootY = player.position.y - (stormHeight - margin); // keep fog above
+            float maxRootY = player.position.y - margin;                 // keep fog below
+            pos.y = Mathf.Clamp(pos.y, minRootY, maxRootY);
+        }
+
+        transform.position = pos;
+    }
+
+    // ------------------------------------------------------------------ debug
+
+    float debugTimer;
+    float debugConsoleTimer;
+    Vector3 debugLastPlayerPos;
+    string debugLogPath;
+    string debugLine;
+    int debugEventCount;
+
+    void DebugTick()
+    {
+        if (!debugMode || player == null) return;
+
+        // Teleport detection (e.g. fall-reset loops).
+        float jump = Vector3.Distance(player.position, debugLastPlayerPos);
+        bool teleported = debugLastPlayerPos != Vector3.zero && jump > 15f;
+        debugLastPlayerPos = player.position;
+
+        float slabBottom = transform.position.y;
+        float slabTop = slabBottom + stormHeight;
+        bool inSlab = player.position.y > slabBottom && player.position.y < slabTop;
+        float density = runtimeProfile != null ? runtimeProfile.density : -1f;
+
+        var drifterCtrl = player.GetComponent<DrifterController>();
+        string moveInfo = drifterCtrl != null
+            ? $"moveSpeed={drifterCtrl.HorizontalSpeed:F1}m/s sprint={drifterCtrl.IsSprinting} crouch={drifterCtrl.IsCrouching}  "
+            : "";
+
+        debugLine =
+            $"t={Time.timeSinceLevelLoad:F1}s  player=({player.position.x:F0}, {player.position.y:F1}, {player.position.z:F0})  " +
+            $"{moveInfo}fogLayer=[{slabBottom:F1} .. {slabTop:F1}]  playerInFog={inSlab}\n" +
+            $"gust={smoothedGust:F2}  density={density:F3} (base {baseDensity:F2} x intensity {intensity:F2})  " +
+            $"size={stormSize:F0}x{stormHeight:F0}  fogVolume={(fog != null ? "OK" : "MISSING!")}  " +
+            $"profile={(runtimeProfile != null ? "instanced" : "NOT INSTANCED")}  events={debugEventCount}";
+
+        bool anomaly = teleported || !inSlab;
+        string flags = (teleported ? $"  [TELEPORT! jumped {jump:F0}m]" : "")
+                     + (!inSlab ? "  [PLAYER OUTSIDE FOG LAYER!]" : "");
+
+        // --- full movement trace to file: every 0.25s, plus every anomaly ---
+        debugTimer += Time.deltaTime;
+        if (debugTimer >= 0.25f || anomaly)
+        {
+            debugTimer = 0f;
+            if (anomaly) debugEventCount++;
+            if (debugLogPath == null)
+            {
+                debugLogPath = System.IO.Path.Combine(Application.dataPath, "..", "sandstorm-debug.log");
+                System.IO.File.AppendAllText(debugLogPath,
+                    $"\n===== session start {System.DateTime.Now:HH:mm:ss} =====\n");
+            }
+            System.IO.File.AppendAllText(debugLogPath,
+                debugLine.Replace("\n", " | ") + flags + "\n");
+        }
+
+        // --- Console: heartbeat every 2s, anomalies immediately as warnings ---
+        debugConsoleTimer += Time.deltaTime;
+        if (anomaly)
+        {
+            Debug.LogWarning("[Sandstorm]" + flags + "\n" + debugLine);
+            debugConsoleTimer = 0f;
+        }
+        else if (debugConsoleTimer >= 2f)
+        {
+            debugConsoleTimer = 0f;
+            Debug.Log("[Sandstorm] " + debugLine);
+        }
     }
 
     // Seamlessly-looping procedural wind: layered filtered noise with a slow

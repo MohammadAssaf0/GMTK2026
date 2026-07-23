@@ -74,6 +74,8 @@ public class DrifterController : MonoBehaviour
     public float normalFov = 60f;
     public float zoomFov = 30f;
     public float zoomSpeed = 9f;
+    [Tooltip("Extra FOV while sprinting - makes running FEEL fast. 0 = off.")]
+    public float sprintFovBoost = 10f;
 
     [Header("Safety")]
     [Tooltip("Like the prefab's CheckIfBelowLevel: falling below this Y teleports back to the start.")]
@@ -126,6 +128,60 @@ public class DrifterController : MonoBehaviour
     {
         LockCursor(true);
         speed = walkSpeed;
+        FixSpawnIfUnderground();
+    }
+
+    // If the saved spawn point ended up under the terrain (easy to do when
+    // moving scenes/models around), find the ground surface above and stand
+    // on it - otherwise the player falls forever and the reset loop makes
+    // the whole world (and the sandstorm) appear to "restart" every few
+    // seconds.
+    void FixSpawnIfUnderground()
+    {
+        // Scan BOTH directions with a MARCHING raycast. Two Unity gotchas:
+        // 1. rays skip backfaces, and imported models are often flipped;
+        // 2. a ray reports only the FIRST hit per collider - so a mesh with
+        //    an inner shell hides its real top surface. Marching steps past
+        //    each hit and keeps going, so every layer is found.
+        float groundY = float.NegativeInfinity;
+        Vector3 xz = startPosition;
+        groundY = Mathf.Max(groundY, MarchScan(new Vector3(xz.x, xz.y + 1000f, xz.z), Vector3.down, 3000f));
+        groundY = Mathf.Max(groundY, MarchScan(new Vector3(xz.x, xz.y - 1000f, xz.z), Vector3.up, 3000f));
+        if (float.IsNegativeInfinity(groundY)) return; // no ground at all - nothing to do
+
+        float feetY = startPosition.y - controller.height * 0.5f;
+        if (feetY < groundY - 0.25f)
+        {
+            startPosition.y = groundY + controller.height * 0.5f + 0.6f;
+            transform.position = startPosition;
+            Physics.SyncTransforms();
+            Debug.Log($"Drifter spawn was under the ground - moved up onto the surface at y={startPosition.y:F1}.");
+        }
+
+        // Keep the fall-reset line safely below the actual start height.
+        if (startPosition.y <= resetBelowY + 2f)
+            resetBelowY = startPosition.y - 100f;
+    }
+
+    // Marching raycast: steps THROUGH every surface along the ray (a normal
+    // raycast stops at the first hit per collider) and returns the highest
+    // hit point, ignoring our own colliders.
+    float MarchScan(Vector3 origin, Vector3 dir, float maxDistance)
+    {
+        float best = float.NegativeInfinity;
+        Vector3 o = origin;
+        float remaining = maxDistance;
+        for (int i = 0; i < 16 && remaining > 0f; i++)
+        {
+            if (!Physics.Raycast(o, dir, out RaycastHit hit, remaining, ~0, QueryTriggerInteraction.Ignore))
+                break;
+            if (hit.collider.transform.root != transform.root && hit.point.y > best)
+                best = hit.point.y;
+            float step = hit.distance + 0.1f;
+            o += dir * step;
+            remaining -= step;
+        }
+        return best;
     }
 
     void Update()
@@ -175,7 +231,8 @@ public class DrifterController : MonoBehaviour
     {
         IsZooming = mouse != null && mouse.rightButton.isPressed && Cursor.lockState == CursorLockMode.Locked;
         if (playerCamera == null) return;
-        float target = IsZooming ? zoomFov : normalFov;
+        float target = IsZooming ? zoomFov
+            : normalFov + (IsSprinting && HorizontalSpeed > 1f ? sprintFovBoost : 0f);
         playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, target, zoomSpeed * Time.deltaTime);
     }
 
