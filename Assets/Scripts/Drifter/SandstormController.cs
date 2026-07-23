@@ -291,7 +291,7 @@ public class SandstormController : MonoBehaviour
 
         var drifterCtrl = player.GetComponent<DrifterController>();
         string moveInfo = drifterCtrl != null
-            ? $"moveSpeed={drifterCtrl.HorizontalSpeed:F1}m/s sprint={drifterCtrl.IsSprinting} crouch={drifterCtrl.IsCrouching}  "
+            ? $"moveSpeed={drifterCtrl.HorizontalSpeed:F1}m/s slope={drifterCtrl.CurrentGroundAngle:F0}deg sliding={drifterCtrl.IsSliding} tumble={drifterCtrl.IsTumbling} sprint={drifterCtrl.IsSprinting} crouch={drifterCtrl.IsCrouching}  "
             : "";
 
         debugLine =

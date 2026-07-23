@@ -63,6 +63,9 @@ Shader "Drifter/SandWorld"
                 half4 tex = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv);
 
                 float3 n = normalize(input.normalWS);
+                // Two-sided lighting: imported meshes are often flipped, and
+                // downward-pointing normals make distant slopes render dark.
+                if (n.y < 0) n = -n;
                 float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
                 Light mainLight = GetMainLight(shadowCoord);
                 half ndotl = saturate(dot(n, mainLight.direction));
