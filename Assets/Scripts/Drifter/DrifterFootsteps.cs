@@ -155,6 +155,9 @@ public class DrifterFootsteps : MonoBehaviour
 
     void OnLanded(float fallSpeed)
     {
+        // Ignore the initial "settling" landing right after the scene loads.
+        if (Time.timeSinceLevelLoad < 0.75f) return;
+
         AudioClip clip = landClip != null ? landClip : synthLand;
         float volume = Mathf.Lerp(0.3f, 1f, Mathf.InverseLerp(2f, 12f, fallSpeed)) * footstepVolume;
         audioSource.pitch = 1f + Random.Range(-pitchJitter, pitchJitter) * 0.5f;
