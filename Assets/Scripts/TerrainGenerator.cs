@@ -16,9 +16,6 @@ public class DuneGenerator : MonoBehaviour
 
     [Tooltip("How sharply pinched the crests are. Higher = sharper ridges.")]
     [SerializeField] private float duneRidgeSharpness = 2.5f;
-
-    [Tooltip("scroll through the noise map")]
-    [SerializeField] private Vector2 duneNoiseOffset;
     
     [Header("Small Dunes Parameters")]
     [Tooltip("How stretched out the dunes are. Lower = larger, wider dunes.")]
@@ -30,8 +27,6 @@ public class DuneGenerator : MonoBehaviour
     [Tooltip("How sharply pinched the crests are. Higher = sharper ridges.")]
     [SerializeField] private float smallRidgeSharpness = 2.5f;
 
-    [Tooltip("scroll through the noise map")]
-    [SerializeField] private Vector2 smallDuneNoiseOffset;
 
     private bool _updatingError;
     
@@ -84,17 +79,22 @@ public class DuneGenerator : MonoBehaviour
         {
             for (int y = 0; y < length; y++)
             {
-                float xCoord = (float)x / width * smallDuneScale + smallDuneNoiseOffset.x;
-                float yCoord = (float)y / length * smallDuneScale + smallDuneNoiseOffset.y;
-
+                float xCoord = (float)x / width * smallDuneScale;
+                float yCoord = (float)y / length * smallDuneScale;
+                
                 float p = Mathf.PerlinNoise(xCoord, yCoord);
                 float ridge = 1f - Mathf.Abs(p * 2f - 1f);
-                float duneHeight = Mathf.Pow(ridge, smallRidgeSharpness);
+                float pointHeight = Mathf.Pow(ridge, smallRidgeSharpness);
 
-                heights[x, y] = duneHeight * (smallDuneHeight / terrainData.size.y);
+                heights[x, y] = pointHeight * (smallDuneHeight / terrainData.size.y);
             }
         }
 
         terrainData.SetHeights(0, 0, heights);
+    }
+
+    private float PerlinNoiseAtPoint(float xCoord, float yCoord, float scale, float Sharpness)
+    {
+        return 0;
     }
 }
