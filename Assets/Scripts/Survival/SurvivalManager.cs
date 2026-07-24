@@ -1,4 +1,3 @@
-using TMPro;
 using UnityEngine;
 
 namespace Survival
@@ -27,13 +26,6 @@ namespace Survival
         public bool hasBatteries;
         public bool hasFlare;
         public bool isPlayerInSafeZone;
-
-        [Header("UI References")]
-        public TextMeshProUGUI waterText;
-        public TextMeshProUGUI daysLeftText;
-        public TextMeshProUGUI notificationText;
-
-        [HideInInspector] public string diaryLog;
         
         private bool _isGameOver;
 
@@ -45,7 +37,7 @@ namespace Survival
         private void Start()
         {
             _lastTrackedHour = Mathf.FloorToInt(dayNightClock.timeOfDay);
-            LogEvent(""); // update diary, game start
+            DiaryManager.Instance.LogEvent(""); // update diary, game start
         }
 
         private void Update()
@@ -65,7 +57,7 @@ namespace Survival
             else if (waterBottles > 0)
             {
                 waterBottles = 0;
-                LogEvent(""); // update diary, ran out of water
+                DiaryManager.Instance.LogEvent(""); // update diary, ran out of water
             }
             else
             {
@@ -102,17 +94,17 @@ namespace Survival
             dayNightClock.ApplyTime();
             _lastTrackedHour = Mathf.FloorToInt(sunriseHour);
             
-            LogEvent(""); // update diary, day over
+            DiaryManager.Instance.StartNewDay(currentDay);
 
             if (isPlayerInSafeZone)
             {
                 DrainWaterForSleep(safeSleepWaterCost);
-                LogEvent(""); 
+                DiaryManager.Instance.LogEvent(""); 
             }
             else
             {
                 DrainWaterForSleep(safeSleepWaterCost + desertSleepPenalty);
-                LogEvent(""); 
+                DiaryManager.Instance.LogEvent(""); 
             }
             
             if (CurrentWaterCheckDead()) return;
@@ -133,7 +125,7 @@ namespace Survival
         {
             if (waterBottles <= 0)
             {
-                LogEvent(""); // update diary, woke up with no water
+                DiaryManager.Instance.LogEvent(""); // update diary, woke up with no water
             }
             return false;
         }
@@ -143,19 +135,13 @@ namespace Survival
         public void GotWater(int amount)
         {
             waterBottles += amount;
-            LogEvent(""); // update diary, collected water
+            DiaryManager.Instance.LogEvent(""); // update diary, collected water
         }
 
-        public void PickupBatteries() { hasBatteries = true; LogEvent(""); } // update diary, got batteries
-        public void PickupFlare() { hasFlare = true; LogEvent(""); } // update diary, got flare
+        public void PickupBatteries() { hasBatteries = true; DiaryManager.Instance.LogEvent(""); } // update diary, got batteries
+        public void PickupFlare() { hasFlare = true; DiaryManager.Instance.LogEvent(""); } // update diary, got flare
 
         // ----------------------------------------------
-        
-        public void LogEvent(string message)
-        {
-            diaryLog += "- " + message + "\n";
-            // Debug.Log("DIARY: " + message);
-        }
 
         private void CheckWinCondition()
         {
@@ -174,8 +160,8 @@ namespace Survival
         private void TriggerGameOver(string message)
         {
             _isGameOver = true;
-            // Debug.Log("GAME OVER: " + message);
-            LogEvent(""); // update diary, lost
+            Debug.Log("GAME OVER: " + message);
+            DiaryManager.Instance.LogEvent(""); // update diary, lost
         }
     }
 }
