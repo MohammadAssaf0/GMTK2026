@@ -1,3 +1,5 @@
+using UnityEngine.UI;
+
 namespace Survival
 {
    using UnityEngine;
@@ -25,7 +27,13 @@ public class DiaryManager : MonoBehaviour
     public TextMeshProUGUI distanceTextDisplay;
     public TextMeshProUGUI stepsTextDisplay;
     
-    public SmartwatchManager smartwatch; 
+    [Header("Map Page")]
+    public Image mapImageDisplay;
+    public GameObject[] mapOverlays;
+    private int currentMapPhase = 0;
+    
+    public SmartwatchManager smartwatch;
+    public static event System.Action<bool> DiaryStateChanged;
 
     private bool _isDiaryOpen;
 
@@ -37,6 +45,11 @@ public class DiaryManager : MonoBehaviour
     private void Start()
     {
         if (diaryModel != null) diaryModel.SetActive(false);
+        
+        foreach (var overlay in mapOverlays)
+        {
+            if (overlay != null) overlay.SetActive(false);
+        }
     }
 
     private void Update()
@@ -59,6 +72,8 @@ public class DiaryManager : MonoBehaviour
     {
         _isDiaryOpen = !_isDiaryOpen;
         diaryModel.SetActive(_isDiaryOpen);
+        
+        DiaryStateChanged?.Invoke(_isDiaryOpen);
 
         if (_isDiaryOpen)
         {
@@ -116,6 +131,15 @@ public class DiaryManager : MonoBehaviour
         var distance = Vector3.Distance(smartwatch.transform.position, smartwatch.crashSite.position);
         distanceTextDisplay.text = "Distance to Crash: " + Mathf.RoundToInt(distance) + "m";
         stepsTextDisplay.text = "Steps Taken: " + smartwatch.GetStepCount(); 
+    }
+    
+    public void UnlockMapOverlay(int mapIndex)
+    {
+        if (mapIndex < 0 || mapIndex >= mapOverlays.Length) return;
+        if (mapOverlays[mapIndex].activeSelf) return;
+        
+        mapOverlays[mapIndex].SetActive(true);
+        LogEvent("Found a new map piece. I sketched the path into my diary.");
     }
 
     // --- Log Logic ---

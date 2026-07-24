@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 namespace Survival
@@ -26,6 +27,11 @@ namespace Survival
         public bool hasBatteries;
         public bool hasFlare;
         public bool isPlayerInSafeZone;
+        
+        [Header("Transition Settings")]
+        public CanvasGroup fadeScreen;
+        public float fadeDuration = 1.5f;
+        private bool _isSleeping = false;
         
         private bool _isGameOver;
 
@@ -64,6 +70,59 @@ namespace Survival
                 TriggerGameOver("");
             }
         }
+        
+        public void SleepThroughNight()
+        {
+            if (_isSleeping) return; 
+            StartCoroutine(SleepRoutine());
+        }
+
+        private IEnumerator SleepRoutine()
+        {
+            _isSleeping = true;
+
+            var timer = 0f;
+            while (timer < fadeDuration)
+            {
+                timer += Time.deltaTime;
+                fadeScreen.alpha = Mathf.Lerp(0f, 1f, timer / fadeDuration);
+                yield return null;
+            }
+            
+            currentDay++;
+            dayNightClock.timeOfDay = sunriseHour;
+            dayNightClock.ApplyTime(); 
+            _lastTrackedHour = Mathf.FloorToInt(sunriseHour); 
+
+            DiaryManager.Instance.StartNewDay(currentDay);
+
+            if (isPlayerInSafeZone)
+            {
+                DrainWaterForSleep(safeSleepWaterCost);
+                DiaryManager.Instance.LogEvent("Slept safely in a shelter.");
+            }
+            else
+            {
+                DrainWaterForSleep(safeSleepWaterCost + desertSleepPenalty);
+                DiaryManager.Instance.LogEvent("Slept out in the harsh desert. Woke up severely dehydrated.");
+            }
+
+            var dead = CurrentWaterCheckDead();
+            if (!dead && currentDay > maxDays)
+            {
+                CheckWinCondition();
+            }
+            
+            timer = 0f;
+            while (timer < fadeDuration)
+            {
+                timer += Time.deltaTime;
+                fadeScreen.alpha = Mathf.Lerp(1f, 0f, timer / fadeDuration);
+                yield return null;
+            }
+
+            _isSleeping = false;
+        }
 
         private void WatchTheClock()
         {
@@ -81,37 +140,6 @@ namespace Survival
             if (dayNightClock.timeOfDay >= sunsetHour)
             {
                 SleepThroughNight();
-            }
-        }
-
-        private void SleepThroughNight()
-        {
-            // add night transition here
-            
-            currentDay++;
-            
-            dayNightClock.timeOfDay = sunriseHour;
-            dayNightClock.ApplyTime();
-            _lastTrackedHour = Mathf.FloorToInt(sunriseHour);
-            
-            DiaryManager.Instance.StartNewDay(currentDay);
-
-            if (isPlayerInSafeZone)
-            {
-                DrainWaterForSleep(safeSleepWaterCost);
-                DiaryManager.Instance.LogEvent(""); 
-            }
-            else
-            {
-                DrainWaterForSleep(safeSleepWaterCost + desertSleepPenalty);
-                DiaryManager.Instance.LogEvent(""); 
-            }
-            
-            if (CurrentWaterCheckDead()) return;
-
-            if (currentDay > maxDays)
-            {
-                CheckWinCondition();
             }
         }
         
