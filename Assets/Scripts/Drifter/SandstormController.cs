@@ -32,6 +32,8 @@ public class SandstormController : MonoBehaviour
     public float fogTurbulence = 0.8f;
 
     [Header("Follow")]
+    [Tooltip("Follow the player at all. Turn OFF to keep the storm fixed on the map (map-relative), e.g. via Tools > Drifter > Fit Sandstorm To Map.")]
+    public bool followPlayer = true;
     [Tooltip("Keep the storm centered on the player's height too, so the player is always wrapped in dense fog.")]
     public bool followPlayerHeight = true;
     [Tooltip("Offset from the player. Negative Y puts the player in the thick lower part of the fog layer.")]
@@ -245,7 +247,7 @@ public class SandstormController : MonoBehaviour
         // always wrapped in the fog, whatever height they're at.
         // Smoothed: a rigid per-frame snap drags the fog pattern with every
         // step and makes the ground seen through it look warped.
-        if (player == null) return;
+        if (player == null || !followPlayer) return;  // map-relative when off
         Vector3 target = player.position + followOffset;
         if (!followPlayerHeight) target.y = transform.position.y;
         Vector3 pos = followSmoothing > 0f

@@ -19,6 +19,7 @@ Shader "Drifter/SandWorld"
         {
             Name "Forward"
             Tags { "LightMode"="UniversalForward" }
+            Cull Off
 
             HLSLPROGRAM
             #pragma vertex vert
@@ -62,15 +63,27 @@ Shader "Drifter/SandWorld"
                 float2 uv = input.positionWS.xz / max(_TileSize, 0.01);
                 half4 tex = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv);
 
+                // The source texture has bright white speckles (it's a snow/
+                // noise map). Use only its LUMINANCE as a subtle sand-grain
+                // variation around the tint, so pure-white texels never pop -
+                // the surface is fundamentally the sandy _BaseColor.
+                half lum = dot(tex.rgb, half3(0.299, 0.587, 0.114));
+                half grain = lerp(0.82, 1.06, lum);          // narrow band, no white
+                half3 albedo = _BaseColor.rgb * grain;
+
                 float3 n = normalize(input.normalWS);
-                // Two-sided lighting: imported meshes are often flipped, and
-                // downward-pointing normals make distant slopes render dark.
-                if (n.y < 0) n = -n;
                 float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
                 Light mainLight = GetMainLight(shadowCoord);
-                half ndotl = saturate(dot(n, mainLight.direction));
+                // Soft two-sided lighting: lights up- and down-facing faces
+                // by angle MAGNITUDE (no hard normal flip), so imported flipped
+                // meshes aren't dark AND intersections don't get a bright seam.
+                half nl = dot(n, mainLight.direction);
+                half ndotl = max(saturate(nl), 0.22);   // front-lit only + flat fill, no bright back-face seam
+                // Ambient from the REAL normal: down-facing faces (undersides)
+                // get the darker ground ambient, not the bright sky, so they
+                // don't look pale/washed - they blend into shadow.
                 half3 ambient = SampleSH(n);
-                half3 color = tex.rgb * _BaseColor.rgb
+                half3 color = albedo
                             * (mainLight.color * mainLight.shadowAttenuation * ndotl + ambient);
                 return half4(color, 1);
             }
@@ -83,6 +96,7 @@ Shader "Drifter/SandWorld"
             Tags { "LightMode"="DepthOnly" }
             ZWrite On
             ColorMask R
+            Cull Off
 
             HLSLPROGRAM
             #pragma vertex vert

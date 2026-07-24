@@ -1,0 +1,15 @@
+===== MAP SIZE =====
+Width  (X): 19719.8 m
+Depth  (Z): 21363.8 m
+Height (Y): 2212.8 m
+Center: (4194.7, 262.0, 5563.7)
+Min:    (-5665.3, -844.4, -5118.2)
+Max:    (14054.6, 1368.4, 16245.6)
+Diagonal (XZ): 29073.8 m
+--- per renderer ---
+measuring object 'map' (4 renderers)
+
+  uploads-files-5763322-low+poly size=(10705 x 10743)  centerXZ=(-313, 254)
+  uploads-files-5763322-low+poly (1) size=(10705 x 10743)  centerXZ=(-312, 10874)
+  uploads-files-5763322-low+poly (2) size=(10708 x 10746)  centerXZ=(8700, 10864)
+  uploads-files-5763322-low+poly (3) size=(10708 x 10746)  centerXZ=(8700, 268)

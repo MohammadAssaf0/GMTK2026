@@ -102,8 +102,10 @@ public class DrifterController : MonoBehaviour
     public float tumbleRecoverTime = 1.2f;
 
     [Header("Safety")]
-    [Tooltip("Like the prefab's CheckIfBelowLevel: falling below this Y teleports back to the start.")]
-    public float resetBelowY = -20f;
+    [Tooltip("Teleport back to safe ground if the player falls below the whole map. OFF by default - your map has big up/down range, so no position reset ever happens.")]
+    public bool enableFallReset = false;
+    [Tooltip("Only used if Enable Fall Reset is on. Set this well BELOW the lowest point of your map.")]
+    public float resetBelowY = -1000f;
 
     // ---- Public state (read by DrifterFootsteps and anything else) ----
     public bool IsGrounded { get; private set; }
@@ -127,6 +129,8 @@ public class DrifterController : MonoBehaviour
     float speed;
     float pitch;
     float lastGroundedTime = -99f;
+    Vector3 lastSafePosition;
+    bool hasSafePosition;
     float currentHeight;
     Vector3 contactPoint;
     Vector3 startPosition;
@@ -526,6 +530,15 @@ public class DrifterController : MonoBehaviour
         {
             lastGroundedTime = Time.time;
 
+            // Remember the last spot we stood safely on the map, so a fall off
+            // the edge returns us HERE (facing the same way) instead of
+            // teleporting to spawn and spinning 180.
+            if (!IsSliding && CurrentGroundAngle < controller.slopeLimit)
+            {
+                lastSafePosition = transform.position;
+                hasSafePosition = true;
+            }
+
             // --- detect a too-steep slope under our feet (original method) ---
             bool sliding = false;
             RaycastHit hit;
@@ -645,13 +658,19 @@ public class DrifterController : MonoBehaviour
         body.AddForce(pushDir * speed * 10f, ForceMode.Force);
     }
 
-    // Like the prefab's CheckIfBelowLevel (resetBelowThisY: -20).
+    // Fell off the edge of the map -> return to the last safe ground we stood
+    // on, keeping the current facing direction (no 180 spin). Falls back to the
+    // spawn point only if we never touched safe ground yet.
     void CheckBelowLevel()
     {
+        if (!enableFallReset) return;  // no position reset - map has big vertical range
         if (transform.position.y < resetBelowY)
         {
             moveDirection = Vector3.zero;
-            transform.SetPositionAndRotation(startPosition, startRotation);
+            if (hasSafePosition)
+                transform.position = lastSafePosition + Vector3.up * 0.5f; // keep facing
+            else
+                transform.SetPositionAndRotation(startPosition, startRotation);
             Physics.SyncTransforms();
         }
     }
