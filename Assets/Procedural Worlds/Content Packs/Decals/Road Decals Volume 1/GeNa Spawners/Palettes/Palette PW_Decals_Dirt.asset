@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c477de684ee10c4082f9fddf19a75ce, type: 3}
+  m_Name: Palette PW_Decals_Dirt
+  m_EditorClassIdentifier: 
+  m_paletteEntryIDCount: -2147483640
+  m_paletteEntries:
+  - m_name: PW_Decal_Dirt_A
+    m_id: -2147483647
+    m_guid: 4708e28a909fa4247a516d209faa17b5
+    m_object: {fileID: 7193665664961533523, guid: 4708e28a909fa4247a516d209faa17b5,
+      type: 3}
+  - m_name: PW_Decal_Dirt_B
+    m_id: -2147483646
+    m_guid: ba7b65a082d3d244dba06db03a39d06d
+    m_object: {fileID: 3773236163049049136, guid: ba7b65a082d3d244dba06db03a39d06d,
+      type: 3}
+  - m_name: PW_Decal_Dirt_C
+    m_id: -2147483645
+    m_guid: ee2d8a34c2559c745bf241d72cf19e99
+    m_object: {fileID: 7748455413719909363, guid: ee2d8a34c2559c745bf241d72cf19e99,
+      type: 3}
+  - m_name: TEST
+    m_id: -2147483644
+    m_guid: 5989476dfa8839c46b4732f8af033e41
+    m_object: {fileID: 7193665664961533523, guid: 5989476dfa8839c46b4732f8af033e41,
+      type: 3}
+  - m_name: PW_Decal_RoadCracks_A
+    m_id: -2147483643
+    m_guid: 7b2346f564cd85b48ac5909e776bd2da
+    m_object: {fileID: 5204676723464052945, guid: 7b2346f564cd85b48ac5909e776bd2da,
+      type: 3}
+  - m_name: PW_Decal_RoadCracks_B
+    m_id: -2147483642
+    m_guid: a7e623f345741ab4e928961ceb5b523c
+    m_object: {fileID: 4191172791554000151, guid: a7e623f345741ab4e928961ceb5b523c,
+      type: 3}
+  - m_name: PW_Decal_RoadCracks_C
+    m_id: -2147483641
+    m_guid: 2951ae3c30442754a9c653e25aec04c2
+    m_object: {fileID: 6211683073365110167, guid: 2951ae3c30442754a9c653e25aec04c2,
+      type: 3}
+  - m_name: PW_Decal_RoadCracks_D
+    m_id: -2147483640
+    m_guid: cc5415bbbbbc53f4ca38059d03ce9d48
+    m_object: {fileID: 1276367528530520664, guid: cc5415bbbbbc53f4ca38059d03ce9d48,
+      type: 3}
