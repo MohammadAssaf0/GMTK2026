@@ -1,0 +1,106 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c477de684ee10c4082f9fddf19a75ce, type: 3}
+  m_Name: Palette PW_Decals_OilSpill
+  m_EditorClassIdentifier: 
+  m_paletteEntryIDCount: -2147483630
+  m_paletteEntries:
+  - m_name: PW_Decal_Dirt_A
+    m_id: -2147483647
+    m_guid: 4708e28a909fa4247a516d209faa17b5
+    m_object: {fileID: 7193665664961533523, guid: 4708e28a909fa4247a516d209faa17b5,
+      type: 3}
+  - m_name: PW_Decal_Dirt_B
+    m_id: -2147483646
+    m_guid: ba7b65a082d3d244dba06db03a39d06d
+    m_object: {fileID: 3773236163049049136, guid: ba7b65a082d3d244dba06db03a39d06d,
+      type: 3}
+  - m_name: PW_Decal_Dirt_C
+    m_id: -2147483645
+    m_guid: ee2d8a34c2559c745bf241d72cf19e99
+    m_object: {fileID: 7748455413719909363, guid: ee2d8a34c2559c745bf241d72cf19e99,
+      type: 3}
+  - m_name: TEST
+    m_id: -2147483644
+    m_guid: 5989476dfa8839c46b4732f8af033e41
+    m_object: {fileID: 7193665664961533523, guid: 5989476dfa8839c46b4732f8af033e41,
+      type: 3}
+  - m_name: PW_Decal_FadedPaint_A
+    m_id: -2147483643
+    m_guid: 98d0943229b362544971abd7b78a384f
+    m_object: {fileID: 193078523538280537, guid: 98d0943229b362544971abd7b78a384f,
+      type: 3}
+  - m_name: PW_Decal_FadedPaint_B
+    m_id: -2147483642
+    m_guid: f5c55edae0621734eb0a8ab49cc52782
+    m_object: {fileID: 8435088548748807780, guid: f5c55edae0621734eb0a8ab49cc52782,
+      type: 3}
+  - m_name: PW_Decal_FadedPaint_C
+    m_id: -2147483641
+    m_guid: 81fbf4c58e6c56c47a5ad4dd76923f98
+    m_object: {fileID: 2061741913072648308, guid: 81fbf4c58e6c56c47a5ad4dd76923f98,
+      type: 3}
+  - m_name: PW_Decal_FadedPaint_D
+    m_id: -2147483640
+    m_guid: 176f32d4bf77975478ba7029d44529a4
+    m_object: {fileID: 4073211851948774924, guid: 176f32d4bf77975478ba7029d44529a4,
+      type: 3}
+  - m_name: PW_Decal_RoadFilling_A
+    m_id: -2147483639
+    m_guid: 3a65a316f21d5a34a961df660fbd8146
+    m_object: {fileID: 2262633465134756939, guid: 3a65a316f21d5a34a961df660fbd8146,
+      type: 3}
+  - m_name: PW_Decal_RoadFilling_B
+    m_id: -2147483638
+    m_guid: d8e010298645dea45803aac146c158f0
+    m_object: {fileID: 642283347077055047, guid: d8e010298645dea45803aac146c158f0,
+      type: 3}
+  - m_name: PW_Decal_RoadFilling_C
+    m_id: -2147483637
+    m_guid: 5bd22065d986be546af514f199207fb7
+    m_object: {fileID: 1407422860697969009, guid: 5bd22065d986be546af514f199207fb7,
+      type: 3}
+  - m_name: PW_Decal_RoadFilling_D
+    m_id: -2147483636
+    m_guid: 61f0815edb02d8143802b58dff22522d
+    m_object: {fileID: 6519222993556548033, guid: 61f0815edb02d8143802b58dff22522d,
+      type: 3}
+  - m_name: PW_Decal_RoadFillingComplex_B
+    m_id: -2147483635
+    m_guid: 074a4f541ea3a1049be0130e5abfc644
+    m_object: {fileID: 7381615458828902578, guid: 074a4f541ea3a1049be0130e5abfc644,
+      type: 3}
+  - m_name: PW_Decal_Gum
+    m_id: -2147483634
+    m_guid: b627b44b1a271b343a60f613d32412ce
+    m_object: {fileID: 8312288192459796220, guid: b627b44b1a271b343a60f613d32412ce,
+      type: 3}
+  - m_name: PW_Decal_Manhole_A
+    m_id: -2147483633
+    m_guid: 7cec8f5b35db6a7439a1804e1dc38075
+    m_object: {fileID: 7527629890703158991, guid: 7cec8f5b35db6a7439a1804e1dc38075,
+      type: 3}
+  - m_name: PW_Decal_OilSpill_A
+    m_id: -2147483632
+    m_guid: 838645fb767a8e04aa5f6e12191e91f0
+    m_object: {fileID: 3038915910226455488, guid: 838645fb767a8e04aa5f6e12191e91f0,
+      type: 3}
+  - m_name: PW_Decal_OilSpill_B
+    m_id: -2147483631
+    m_guid: 1f02e31e7b515be4892cc01c03c2ddaf
+    m_object: {fileID: 2613327231312940002, guid: 1f02e31e7b515be4892cc01c03c2ddaf,
+      type: 3}
+  - m_name: PW_Decal_OilSpill_C
+    m_id: -2147483630
+    m_guid: 9ca3b1ace036cd94282f6b56f8f2ddac
+    m_object: {fileID: 8019255853331815256, guid: 9ca3b1ace036cd94282f6b56f8f2ddac,
+      type: 3}

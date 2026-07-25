@@ -1,0 +1,241 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c477de684ee10c4082f9fddf19a75ce, type: 3}
+  m_Name: Palette PW_Decals_RusticRoad
+  m_EditorClassIdentifier: 
+  m_paletteEntryIDCount: -2147483603
+  m_paletteEntries:
+  - m_name: PW_Decal_CityCracks_A
+    m_id: -2147483647
+    m_guid: acd03822c0d44c64c9ac7b8965c51c7f
+    m_object: {fileID: 7865432441226737163, guid: acd03822c0d44c64c9ac7b8965c51c7f,
+      type: 3}
+  - m_name: PW_Decal_CityCracks_B
+    m_id: -2147483646
+    m_guid: b552aa162f2a58042bff4f4abe54eaf4
+    m_object: {fileID: 1885193285674122993, guid: b552aa162f2a58042bff4f4abe54eaf4,
+      type: 3}
+  - m_name: PW_Decal_CityCracks_C
+    m_id: -2147483645
+    m_guid: 267c4c83e37629b4db7b71c36f085e69
+    m_object: {fileID: 7654485266148250279, guid: 267c4c83e37629b4db7b71c36f085e69,
+      type: 3}
+  - m_name: PW_Decal_CityCracks_D
+    m_id: -2147483644
+    m_guid: 8dedd01743c37f0409f1d08257afd84b
+    m_object: {fileID: 1928738314737493196, guid: 8dedd01743c37f0409f1d08257afd84b,
+      type: 3}
+  - m_name: PW_Decal_CityCracks_E
+    m_id: -2147483643
+    m_guid: 6352cd6f704fbae4ab8e9f58b41c3902
+    m_object: {fileID: 4506043208766730951, guid: 6352cd6f704fbae4ab8e9f58b41c3902,
+      type: 3}
+  - m_name: PW_Decal_CityCracks_F
+    m_id: -2147483642
+    m_guid: 43bf03cb1c3b24d4092218834116aa31
+    m_object: {fileID: 3188841790029672615, guid: 43bf03cb1c3b24d4092218834116aa31,
+      type: 3}
+  - m_name: PW_Decal_CityCracks_G
+    m_id: -2147483641
+    m_guid: d9c5724e0d2bee645abfa1d1e601b01c
+    m_object: {fileID: 7108957556666666348, guid: d9c5724e0d2bee645abfa1d1e601b01c,
+      type: 3}
+  - m_name: PW_Decal_Cracks_A
+    m_id: -2147483640
+    m_guid: f6a109be5a6c1534487cdf6af1bc5ac3
+    m_object: {fileID: 2688463709397546101, guid: f6a109be5a6c1534487cdf6af1bc5ac3,
+      type: 3}
+  - m_name: PW_Decal_Cracks_B
+    m_id: -2147483639
+    m_guid: ebf0d18d4b54cca469aa9bed5230db5b
+    m_object: {fileID: 751695077684256476, guid: ebf0d18d4b54cca469aa9bed5230db5b,
+      type: 3}
+  - m_name: PW_Decal_Cracks_C
+    m_id: -2147483638
+    m_guid: d9b0d5120455dab47b83000f30f798f4
+    m_object: {fileID: 1721436186722626224, guid: d9b0d5120455dab47b83000f30f798f4,
+      type: 3}
+  - m_name: PW_Decal_Dirt_A
+    m_id: -2147483637
+    m_guid: 4708e28a909fa4247a516d209faa17b5
+    m_object: {fileID: 7193665664961533523, guid: 4708e28a909fa4247a516d209faa17b5,
+      type: 3}
+  - m_name: PW_Decal_Dirt_B
+    m_id: -2147483636
+    m_guid: ba7b65a082d3d244dba06db03a39d06d
+    m_object: {fileID: 3773236163049049136, guid: ba7b65a082d3d244dba06db03a39d06d,
+      type: 3}
+  - m_name: PW_Decal_FadedPaint_A
+    m_id: -2147483635
+    m_guid: 98d0943229b362544971abd7b78a384f
+    m_object: {fileID: 193078523538280537, guid: 98d0943229b362544971abd7b78a384f,
+      type: 3}
+  - m_name: PW_Decal_FadedPaint_B
+    m_id: -2147483634
+    m_guid: f5c55edae0621734eb0a8ab49cc52782
+    m_object: {fileID: 8435088548748807780, guid: f5c55edae0621734eb0a8ab49cc52782,
+      type: 3}
+  - m_name: PW_Decal_FadedPaint_C
+    m_id: -2147483633
+    m_guid: 81fbf4c58e6c56c47a5ad4dd76923f98
+    m_object: {fileID: 2061741913072648308, guid: 81fbf4c58e6c56c47a5ad4dd76923f98,
+      type: 3}
+  - m_name: PW_Decal_FadedPaint_D
+    m_id: -2147483632
+    m_guid: 176f32d4bf77975478ba7029d44529a4
+    m_object: {fileID: 4073211851948774924, guid: 176f32d4bf77975478ba7029d44529a4,
+      type: 3}
+  - m_name: PW_Decal_OilSpill_A
+    m_id: -2147483631
+    m_guid: 838645fb767a8e04aa5f6e12191e91f0
+    m_object: {fileID: 3038915910226455488, guid: 838645fb767a8e04aa5f6e12191e91f0,
+      type: 3}
+  - m_name: PW_Decal_OilSpill_B
+    m_id: -2147483630
+    m_guid: 1f02e31e7b515be4892cc01c03c2ddaf
+    m_object: {fileID: 2613327231312940002, guid: 1f02e31e7b515be4892cc01c03c2ddaf,
+      type: 3}
+  - m_name: PW_Decal_OilSpill_C
+    m_id: -2147483629
+    m_guid: 9ca3b1ace036cd94282f6b56f8f2ddac
+    m_object: {fileID: 8019255853331815256, guid: 9ca3b1ace036cd94282f6b56f8f2ddac,
+      type: 3}
+  - m_name: PW_Decal_Pothole_A
+    m_id: -2147483628
+    m_guid: a87f30973e331f54a8498c5e942662b7
+    m_object: {fileID: 5824800572894972585, guid: a87f30973e331f54a8498c5e942662b7,
+      type: 3}
+  - m_name: PW_Decal_Pothole_B
+    m_id: -2147483627
+    m_guid: 282ea796f9ba2eb43a2a8e6c9791767b
+    m_object: {fileID: 1798933379280542502, guid: 282ea796f9ba2eb43a2a8e6c9791767b,
+      type: 3}
+  - m_name: PW_Decal_Pothole_C
+    m_id: -2147483626
+    m_guid: 4d4884691e2b2b84d87d015975b62c89
+    m_object: {fileID: 5217785571041332392, guid: 4d4884691e2b2b84d87d015975b62c89,
+      type: 3}
+  - m_name: PW_Decal_Pothole_D
+    m_id: -2147483625
+    m_guid: 7ba4fe53d5458b442ad87a1ee8e45171
+    m_object: {fileID: 3346228021953545023, guid: 7ba4fe53d5458b442ad87a1ee8e45171,
+      type: 3}
+  - m_name: PW_Decal_Pothole_E
+    m_id: -2147483624
+    m_guid: 7b47694dc21ec7b48852777da2f002ff
+    m_object: {fileID: 1984797260764767668, guid: 7b47694dc21ec7b48852777da2f002ff,
+      type: 3}
+  - m_name: PW_Decal_Pothole_F
+    m_id: -2147483623
+    m_guid: 73abb327838dedb4caddd91464f4ba7c
+    m_object: {fileID: 932454261138917478, guid: 73abb327838dedb4caddd91464f4ba7c,
+      type: 3}
+  - m_name: PW_Decal_Pothole_G
+    m_id: -2147483622
+    m_guid: fea9594443d72e046ada8d9a59dd052f
+    m_object: {fileID: 7210756099891345104, guid: fea9594443d72e046ada8d9a59dd052f,
+      type: 3}
+  - m_name: PW_Decal_Pothole_H
+    m_id: -2147483621
+    m_guid: 5778e8d46049c2140a742d99461fab3e
+    m_object: {fileID: 5018735647340071701, guid: 5778e8d46049c2140a742d99461fab3e,
+      type: 3}
+  - m_name: PW_Decal_Puddles_A
+    m_id: -2147483620
+    m_guid: 2bb5910e3cd2d1b499013b6e61e413eb
+    m_object: {fileID: 4265441243499864420, guid: 2bb5910e3cd2d1b499013b6e61e413eb,
+      type: 3}
+  - m_name: PW_Decal_Puddles_B
+    m_id: -2147483619
+    m_guid: c785e194636228e40b7d84c32f486bdf
+    m_object: {fileID: 6422277098841102587, guid: c785e194636228e40b7d84c32f486bdf,
+      type: 3}
+  - m_name: PW_Decal_Puddles_C
+    m_id: -2147483618
+    m_guid: 35caa7adfad644a4894b516249145961
+    m_object: {fileID: 3247929643542055188, guid: 35caa7adfad644a4894b516249145961,
+      type: 3}
+  - m_name: PW_Decal_Puddles_D
+    m_id: -2147483617
+    m_guid: 9dc268afe2ba8bd4188265e8f1517090
+    m_object: {fileID: 4432707590623099238, guid: 9dc268afe2ba8bd4188265e8f1517090,
+      type: 3}
+  - m_name: PW_Decal_RoadCracks_A
+    m_id: -2147483616
+    m_guid: 7b2346f564cd85b48ac5909e776bd2da
+    m_object: {fileID: 5204676723464052945, guid: 7b2346f564cd85b48ac5909e776bd2da,
+      type: 3}
+  - m_name: PW_Decal_RoadCracks_C
+    m_id: -2147483615
+    m_guid: 2951ae3c30442754a9c653e25aec04c2
+    m_object: {fileID: 6211683073365110167, guid: 2951ae3c30442754a9c653e25aec04c2,
+      type: 3}
+  - m_name: PW_Decal_RoadCracks_B
+    m_id: -2147483614
+    m_guid: a7e623f345741ab4e928961ceb5b523c
+    m_object: {fileID: 4191172791554000151, guid: a7e623f345741ab4e928961ceb5b523c,
+      type: 3}
+  - m_name: PW_Decal_RoadCracks_D
+    m_id: -2147483613
+    m_guid: cc5415bbbbbc53f4ca38059d03ce9d48
+    m_object: {fileID: 1276367528530520664, guid: cc5415bbbbbc53f4ca38059d03ce9d48,
+      type: 3}
+  - m_name: PW_Decal_RoadFilling_A
+    m_id: -2147483612
+    m_guid: 3a65a316f21d5a34a961df660fbd8146
+    m_object: {fileID: 2262633465134756939, guid: 3a65a316f21d5a34a961df660fbd8146,
+      type: 3}
+  - m_name: PW_Decal_RoadFilling_B
+    m_id: -2147483611
+    m_guid: d8e010298645dea45803aac146c158f0
+    m_object: {fileID: 642283347077055047, guid: d8e010298645dea45803aac146c158f0,
+      type: 3}
+  - m_name: PW_Decal_RoadFilling_C
+    m_id: -2147483610
+    m_guid: 5bd22065d986be546af514f199207fb7
+    m_object: {fileID: 1407422860697969009, guid: 5bd22065d986be546af514f199207fb7,
+      type: 3}
+  - m_name: PW_Decal_RoadFilling_D
+    m_id: -2147483609
+    m_guid: 61f0815edb02d8143802b58dff22522d
+    m_object: {fileID: 6519222993556548033, guid: 61f0815edb02d8143802b58dff22522d,
+      type: 3}
+  - m_name: PW_Decal_RoadFillingComplex_A
+    m_id: -2147483608
+    m_guid: 5a7f46bab904b9545adbb89ab96a5ce2
+    m_object: {fileID: 3194929582712382356, guid: 5a7f46bab904b9545adbb89ab96a5ce2,
+      type: 3}
+  - m_name: PW_Decal_RoadFillingComplex_B
+    m_id: -2147483607
+    m_guid: 074a4f541ea3a1049be0130e5abfc644
+    m_object: {fileID: 7381615458828902578, guid: 074a4f541ea3a1049be0130e5abfc644,
+      type: 3}
+  - m_name: PW_Decal_RoadRocks_A
+    m_id: -2147483606
+    m_guid: 84df36bb37083374e92bb9d0a642a68c
+    m_object: {fileID: 6203990577868911794, guid: 84df36bb37083374e92bb9d0a642a68c,
+      type: 3}
+  - m_name: PW_Decal_RoadRocks_B
+    m_id: -2147483605
+    m_guid: b0907655a7ca8a14ea014d6fe4c6df2a
+    m_object: {fileID: 5855378676855032542, guid: b0907655a7ca8a14ea014d6fe4c6df2a,
+      type: 3}
+  - m_name: PW_Decal_RoadRocks_C
+    m_id: -2147483604
+    m_guid: e050c44f2ae9de24184f2e0edf3db2e6
+    m_object: {fileID: 5121120585228063745, guid: e050c44f2ae9de24184f2e0edf3db2e6,
+      type: 3}
+  - m_name: PW_Decal_Gum
+    m_id: -2147483603
+    m_guid: b627b44b1a271b343a60f613d32412ce
+    m_object: {fileID: 8312288192459796220, guid: b627b44b1a271b343a60f613d32412ce,
+      type: 3}
