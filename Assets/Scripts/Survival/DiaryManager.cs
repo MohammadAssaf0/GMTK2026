@@ -93,10 +93,31 @@ namespace Survival
 
             if (_isDiaryOpen)
             {
-                if (Keyboard.current.qKey.wasPressedThisFrame) FlipPage(-1);
-                if (Keyboard.current.eKey.wasPressedThisFrame) FlipPage(1);
+                if (Keyboard.current.eKey.wasPressedThisFrame)
+                {
+                    if (_currentPageIndex == 0 && logTextDisplay && logTextDisplay.pageToDisplay < logTextDisplay.textInfo.pageCount)
+                    {
+                        logTextDisplay.pageToDisplay++;
+                    }
+                    else
+                    {
+                        FlipPage(1);
+                    }
+                }
 
-                if (_currentPageIndex == 0) UpdateNavigationPage();
+                if (Keyboard.current.qKey.wasPressedThisFrame)
+                {
+                    if (_currentPageIndex == 0 && logTextDisplay && logTextDisplay.pageToDisplay > 1)
+                    {
+                        logTextDisplay.pageToDisplay--;
+                    }
+                    else
+                    {
+                        FlipPage(-1);
+                    }
+                }
+                
+                if (_currentPageIndex == 1) UpdateNavigationPage(); 
             }
         }
 
@@ -270,6 +291,8 @@ namespace Survival
             if (!logTextDisplay) return;
 
             logTextDisplay.text = string.Join("\n\n", _currentDayLogs);
+            logTextDisplay.ForceMeshUpdate();
+            logTextDisplay.pageToDisplay = 1;
         }
     }
 }

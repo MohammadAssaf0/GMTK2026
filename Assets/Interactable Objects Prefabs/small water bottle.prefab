@@ -9,6 +9,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7353027168361415648}
+  - component: {fileID: 3360544018362880699}
+  - component: {fileID: 7964981384159150481}
   m_Layer: 3
   m_Name: small water bottle
   m_TagString: Untagged
@@ -32,6 +34,48 @@ Transform:
   - {fileID: 127600010948583215}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!136 &3360544018362880699
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 763000537074070650}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 2.0557122
+  m_Height: 8.224468
+  m_Direction: 1
+  m_Center: {x: 0.010447264, y: 1.6600351, z: -1.0305643}
+--- !u!114 &7964981384159150481
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 763000537074070650}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b7ea3f38788e4755b8d4a63f07e49fe8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Interactables.InteractableObject
+  promptText: small water bottle
+  amountIndex: 3
+  interactionCount: 1
+  actionType: 1
+  onInteractAction:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1001 &454840428920862916
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -87,63 +131,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 88dffda6f5ea5417c91429654a2fd46e, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 489807458857110781}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 88dffda6f5ea5417c91429654a2fd46e, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 3790526795912713370}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 88dffda6f5ea5417c91429654a2fd46e, type: 3}
 --- !u!4 &127600010948583215 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 88dffda6f5ea5417c91429654a2fd46e, type: 3}
   m_PrefabInstance: {fileID: 454840428920862916}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &760689578643113365 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 88dffda6f5ea5417c91429654a2fd46e, type: 3}
-  m_PrefabInstance: {fileID: 454840428920862916}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &489807458857110781
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 760689578643113365}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b7ea3f38788e4755b8d4a63f07e49fe8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Interactables.InteractableObject
-  promptText: small water bottle
-  amountIndex: 3
-  interactionCount: 1
-  actionType: 1
-  onInteractAction:
-    m_PersistentCalls:
-      m_Calls: []
---- !u!136 &3790526795912713370
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 760689578643113365}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 2.0557122
-  m_Height: 8.224468
-  m_Direction: 1
-  m_Center: {x: 0.010447264, y: 1.6600351, z: -1.0305643}
