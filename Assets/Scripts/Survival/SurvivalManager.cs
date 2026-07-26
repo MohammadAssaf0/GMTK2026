@@ -1,4 +1,5 @@
 using System.Collections;
+using TMPro;
 using UnityEngine;
 
 namespace Survival
@@ -33,6 +34,10 @@ namespace Survival
         public float fadeDuration = 1.5f;
         private bool _isSleeping = false;
         
+        [Header("Endgame UI")]
+        public TextMeshProUGUI blackScreenText;
+        public GameObject restartButton;
+        
         private bool _isGameOver;
 
         private void Awake()
@@ -43,7 +48,10 @@ namespace Survival
         private void Start()
         {
             _lastTrackedHour = Mathf.FloorToInt(dayNightClock.timeOfDay);
-            DiaryManager.Instance.LogEvent(""); // update diary, game start
+            DiaryManager.Instance.LogEvent("I survived the plane crash, good thing I was alone flaying it." +
+                                           "The rescue on the radio told me they will arrive in 3 days." +
+                                           "until then I need to survive this heat. but I'll need a replacement " +
+                                           "for the batteries and some kind of fire or flare to signal my location");
         }
 
         private void Update()
@@ -63,7 +71,7 @@ namespace Survival
             else if (waterBottles > 0)
             {
                 waterBottles = 0;
-                DiaryManager.Instance.LogEvent(""); // update diary, ran out of water
+                DiaryManager.Instance.LogEvent("I dont have any water lief. I need to find more ASAP");
             }
             else
             {
@@ -89,29 +97,37 @@ namespace Survival
                 yield return null;
             }
             
+            fadeScreen.alpha = 1f;
+            
             currentDay++;
             dayNightClock.timeOfDay = sunriseHour;
             dayNightClock.ApplyTime(); 
-            _lastTrackedHour = Mathf.FloorToInt(sunriseHour); 
+            _lastTrackedHour = Mathf.FloorToInt(sunriseHour);
+            blackScreenText.text = "Day " + currentDay;
 
             DiaryManager.Instance.StartNewDay(currentDay);
 
             if (isPlayerInSafeZone)
             {
                 DrainWaterForSleep(safeSleepWaterCost);
-                DiaryManager.Instance.LogEvent("Slept safely in a shelter.");
+                DiaryManager.Instance.LogEvent("I slept not comfortably but safely in a shelter. a day closer to the rescue");
             }
             else
             {
                 DrainWaterForSleep(safeSleepWaterCost + desertSleepPenalty);
-                DiaryManager.Instance.LogEvent("Slept out in the harsh desert. Woke up severely dehydrated.");
+                DiaryManager.Instance.LogEvent("I slept out in the harsh desert. Apparently a rat chewed into some" +
+                                               " of the water bottles and I lost them.");
             }
 
             var dead = CurrentWaterCheckDead();
-            if (!dead && currentDay > maxDays)
+            
+            if (currentDay > maxDays)
             {
-                CheckWinCondition();
+                EvaluateEndgame();
+                yield break;
             }
+            
+            yield return new WaitForSeconds(fadeDuration);
             
             timer = 0f;
             while (timer < fadeDuration)
@@ -153,7 +169,8 @@ namespace Survival
         {
             if (waterBottles <= 0)
             {
-                DiaryManager.Instance.LogEvent(""); // update diary, woke up with no water
+                DiaryManager.Instance.LogEvent("I woke up thirsty, I have no water left." +
+                                               " If I don't find any soon I might not live to get rescued");
             }
             return false;
         }
@@ -163,33 +180,71 @@ namespace Survival
         public void GotWater(int amount)
         {
             waterBottles += amount;
-            DiaryManager.Instance.LogEvent(""); // update diary, collected water
+            DiaryManager.Instance.LogEvent("I found some more water, always good.");
         }
 
-        public void PickupBatteries() { hasBatteries = true; DiaryManager.Instance.LogEvent(""); } // update diary, got batteries
-        public void PickupFlare() { hasFlare = true; DiaryManager.Instance.LogEvent(""); } // update diary, got flare
+        public void PickupBatteries() { hasBatteries = true; DiaryManager.Instance.LogEvent("finally found some batteries"); }
+        public void PickupFlare() { hasFlare = true; DiaryManager.Instance.LogEvent("got a flare that I needed"); }
 
         // ----------------------------------------------
 
-        private void CheckWinCondition()
+        private void EvaluateEndgame()
         {
             _isGameOver = true;
-            
-            if (hasBatteries && hasFlare && isPlayerInSafeZone)
+
+            if (!isPlayerInSafeZone)
             {
-                TriggerGameOver("Rescue arrived! You survived.");
+                ShowEndgameScreen("Day 4 arrived, but you slept out in the open desert," +
+                                  " a scorpion stung you in your final hours. bummer!");
+            }
+            else if (!hasFlare)
+            {
+                var text = "The rescue plane flew directly overhead, but you had no flare to signal them. They kept flying.";
+                if (!hasBatteries) text += " And your batteries didn't last long enough to communicate your location properly...";
+                ShowEndgameScreen(text);
+            }
+            else if (!hasBatteries)
+            {
+                ShowEndgameScreen("You had the flare, but the igniter was dead. Without batteries " +
+                                  "you couldn't communicate your location. They thought you were dead.");
             }
             else
             {
-                TriggerGameOver("Rescue arrived, but you couldn't signal them or weren't at the extraction point. Game Over.");
+                ShowEndgameScreen("You told them your approximate location. You fired the flare" +
+                                  " into the morning sky. The rescue plane banked and landed. You survived the " +
+                                  "most tragic 3 days of your life.");
             }
         }
 
         private void TriggerGameOver(string message)
         {
             _isGameOver = true;
-            Debug.Log("GAME OVER: " + message);
-            DiaryManager.Instance.LogEvent(""); // update diary, lost
+            
+            if (fadeScreen) fadeScreen.alpha = 1f;
+
+            ShowEndgameScreen(message);
+        }
+        
+        private void ShowEndgameScreen(string finalMessage)
+        {
+            if (blackScreenText)
+            {
+                blackScreenText.text = finalMessage;
+                blackScreenText.gameObject.SetActive(true);
+            }
+        
+            if (restartButton) restartButton.SetActive(true);
+
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        
+            Time.timeScale = 0f;
+        }
+
+        public void RestartGame()
+        {
+            Time.timeScale = 1f;
+            UnityEngine.SceneManagement.SceneManager.LoadScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex);
         }
     }
 }
