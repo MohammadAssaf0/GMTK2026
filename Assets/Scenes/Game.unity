@@ -11557,6 +11557,33 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 0}
+--- !u!1 &463873394 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 27f6814dc264a43378a573cd6bb5b354, type: 3}
+  m_PrefabInstance: {fileID: 1997626909}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &463873398
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 463873394}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 4438334970857249923, guid: 27f6814dc264a43378a573cd6bb5b354, type: 3}
 --- !u!1 &468802937 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 65b0b86a127f34e67a05ee10fec7536a, type: 3}
@@ -15329,7 +15356,7 @@ Material:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _DetailColor: {r: 0.45425, g: 0.36225, b: 0.24725, a: 0}
     - _DetailData: {r: 0.4, g: 0.5, b: 0.002, a: 0.85}
-    - _DetailWindDirection: {r: 3.0303535, g: 0, b: 1.0101178, a: 0}
+    - _DetailWindDirection: {r: 4.097775, g: 0, b: 1.3659256, a: 0}
     - _DistanceData: {r: 0, g: 5, b: 1, a: 1}
     - _FogOfWarCenter: {r: 0, g: 0, b: 0, a: 1}
     - _FogOfWarCenterAdjusted: {r: 0, g: 0, b: 0, a: 1}
@@ -15342,7 +15369,7 @@ Material:
     - _ShadowData: {r: 0.5, g: 0, b: 250, a: 0}
     - _SpecularColor: {r: 0.5, g: 0.5, b: 0.5, a: 0}
     - _SunDir: {r: 0.32139385, g: 0.8660254, b: -0.38302228, a: 0}
-    - _WindDirection: {r: 3.0303535, g: 0, b: 1.0101178, a: 0}
+    - _WindDirection: {r: 4.097775, g: 0, b: 1.3659256, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!4 &600828217 stripped
@@ -52775,7 +52802,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 27f6814dc264a43378a573cd6bb5b354, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 463873398}
   m_SourcePrefab: {fileID: 100100000, guid: 27f6814dc264a43378a573cd6bb5b354, type: 3}
 --- !u!1001 &1999007960
 PrefabInstance:
